@@ -1,10 +1,10 @@
 use async_graphql::connection::{Connection, EmptyFields};
 
-pub(crate) mod category;
+pub(crate) mod listing;
 pub(crate) mod pagination;
 
 #[derive(async_graphql::MergedObject, Default)]
-pub struct Query(category::CategoryQuery);
+pub struct Query(listing::ListingQuery);
 
 pub(crate) type ConnectionResult<T> = async_graphql::Result<
     Connection<pagination::Base64Cursor, T, pagination::ConnectionFields, EmptyFields>,

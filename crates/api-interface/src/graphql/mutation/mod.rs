@@ -2,10 +2,10 @@ use std::fmt::Display;
 
 use async_graphql::Enum;
 
-pub(crate) mod category;
+pub(crate) mod listing;
 
 #[derive(async_graphql::MergedObject, Default)]
-pub struct Mutation(category::CategoryMutation);
+pub struct Mutation(listing::ListingMutation);
 
 #[derive(Enum, Eq, PartialEq, Copy, Clone, Debug)]
 pub(crate) enum MutationType {

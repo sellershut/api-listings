@@ -1,21 +1,21 @@
-use api_core::{api::QueryCategories, Listing};
+use api_core::{api::QueryListings, Listing};
 use async_graphql::{Context, Object, Subscription};
 use futures_util::{Stream, StreamExt};
 
-use crate::graphql::{extract_db, mutation::MutationType, subscription::CategoryChanged};
+use crate::graphql::{extract_db, mutation::MutationType, subscription::ListingChanged};
 
 use super::broker::SimpleBroker;
 
 #[derive(Default)]
-pub struct CategorySubscription;
+pub struct ListingSubscription;
 
 #[Subscription]
-impl CategorySubscription {
+impl ListingSubscription {
     async fn categories(
         &self,
         mutation_type: Option<MutationType>,
-    ) -> impl Stream<Item = CategoryChanged> {
-        SimpleBroker::<CategoryChanged>::subscribe().filter(move |event| {
+    ) -> impl Stream<Item = ListingChanged> {
+        SimpleBroker::<ListingChanged>::subscribe().filter(move |event| {
             let res = if let Some(mutation_type) = mutation_type {
                 event.mutation_type == mutation_type
             } else {
@@ -27,7 +27,7 @@ impl CategorySubscription {
 }
 
 #[Object]
-impl CategoryChanged {
+impl ListingChanged {
     async fn mutation_type(&self) -> MutationType {
         self.mutation_type
     }
@@ -38,7 +38,7 @@ impl CategoryChanged {
 
     async fn category(&self, ctx: &Context<'_>) -> async_graphql::Result<Option<Listing>> {
         let database = extract_db(ctx)?;
-        let category = database.get_category_by_id(&self.id).await?;
+        let category = database.get_listing_by_id(self.id).await?;
 
         Ok(category)
     }

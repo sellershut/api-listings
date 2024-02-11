@@ -1,18 +1,18 @@
 use api_core::{
-    api::{MutateCategories, Uuid},
+    api::{MutateListings, Uuid},
     Listing,
 };
 use api_database::Client;
 use async_graphql::{Context, Object};
 use tracing::instrument;
 
-use crate::graphql::subscription::{broker::SimpleBroker, CategoryChanged};
+use crate::graphql::subscription::{broker::SimpleBroker, ListingChanged};
 
 #[derive(Default, Debug)]
-pub struct CategoryMutation;
+pub struct ListingMutation;
 
 #[Object]
-impl CategoryMutation {
+impl ListingMutation {
     #[instrument(skip(ctx), err(Debug))]
     async fn create_category(
         &self,
@@ -21,14 +21,14 @@ impl CategoryMutation {
     ) -> async_graphql::Result<Listing> {
         let database = ctx.data::<Client>()?;
 
-        match database.create_category(&input).await {
-            Ok(category) => {
-                SimpleBroker::publish(CategoryChanged {
+        match database.create_listing(&input).await {
+            Ok(listing) => {
+                SimpleBroker::publish(ListingChanged {
                     mutation_type: super::MutationType::Created,
-                    id: category.id,
+                    id: listing.id,
                 });
 
-                Ok(category)
+                Ok(listing)
             }
             Err(e) => Err(e.into()),
         }
@@ -43,9 +43,9 @@ impl CategoryMutation {
     ) -> async_graphql::Result<Option<Listing>> {
         let database = ctx.data::<Client>()?;
 
-        match database.update_category(&id, &input).await {
+        match database.update_listing(&id, &input).await {
             Ok(category) => {
-                SimpleBroker::publish(CategoryChanged {
+                SimpleBroker::publish(ListingChanged {
                     mutation_type: super::MutationType::Updated,
                     id,
                 });
@@ -63,9 +63,9 @@ impl CategoryMutation {
     ) -> async_graphql::Result<Option<Listing>> {
         let database = ctx.data::<Client>()?;
 
-        match database.delete_category(&id).await {
+        match database.delete_listing(&id).await {
             Ok(category) => {
-                SimpleBroker::publish(CategoryChanged {
+                SimpleBroker::publish(ListingChanged {
                     mutation_type: super::MutationType::Deleted,
                     id,
                 });
