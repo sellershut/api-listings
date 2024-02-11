@@ -1,4 +1,4 @@
-use api_core::{api::QueryCategories, Category};
+use api_core::{api::QueryCategories, Listing};
 use async_graphql::{Context, Object, Subscription};
 use futures_util::{Stream, StreamExt};
 
@@ -36,7 +36,7 @@ impl CategoryChanged {
         self.id.to_string()
     }
 
-    async fn category(&self, ctx: &Context<'_>) -> async_graphql::Result<Option<Category>> {
+    async fn category(&self, ctx: &Context<'_>) -> async_graphql::Result<Option<Listing>> {
         let database = extract_db(ctx)?;
         let category = database.get_category_by_id(&self.id).await?;
 

@@ -10,12 +10,13 @@ async-graphql = { workspace = true, optional = true }
 async-trait = "0.1.77"
 serde = { workspace = true, optional = true }
 thiserror.workspace = true
+time.workspace = true
 trait-variant.workspace = true
 uuid = { workspace = true, features = ["serde"] }
 
 [features]
 default = []
-async-graphql = ["dep:async-graphql", "async-graphql/uuid"]
+async-graphql = ["dep:async-graphql", "async-graphql/uuid", "async-graphql/time"]
 serde = ["serde/derive"]
 
 [dev-dependencies]

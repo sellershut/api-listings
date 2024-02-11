@@ -4,7 +4,7 @@ use crate::{
     Client,
 };
 use anyhow::Result;
-use api_core::{api::QueryCategories, reexports::uuid::Uuid, Category};
+use api_core::{api::QueryCategories, reexports::uuid::Uuid, Listing};
 
 async fn check_categories_by_id(client: Client, id: &Uuid, expected_result: bool) -> Result<()> {
     match client.get_category_by_id(id).await {
@@ -73,7 +73,7 @@ async fn query_by_available_id() -> Result<()> {
         .query("SELECT * FROM category LIMIT 5;")
         .await?;
 
-    let resp: Vec<Category> = res.take(0)?;
+    let resp: Vec<Listing> = res.take(0)?;
 
     if let Some(item) = resp.first() {
         check_categories_by_id(client, &item.id, true).await?;

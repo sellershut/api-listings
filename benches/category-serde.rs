@@ -1,4 +1,4 @@
-use api_core::Category;
+use api_core::Listing;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use fake::{faker::lorem::en::Words, Fake};
 use uuid::Uuid;
@@ -13,7 +13,7 @@ fn bench(c: &mut Criterion) {
 
         let sub_categories: Vec<_> = [0; 4].iter().map(|_| Uuid::now_v7()).collect();
 
-        let category = Category {
+        let category = Listing {
             id: Uuid::now_v7(),
             name: words,
             sub_categories: Some(sub_categories),
@@ -31,7 +31,7 @@ fn bench(c: &mut Criterion) {
     let cat_str = serde_json::to_string(&categories).unwrap();
 
     c.bench_function(&format!("deserialise {count}"), |b| {
-        b.iter(|| black_box(serde_json::from_str::<Vec<Category>>(&cat_str)))
+        b.iter(|| black_box(serde_json::from_str::<Vec<Listing>>(&cat_str)))
     });
 }
 

@@ -1,6 +1,6 @@
 use api_core::{
     api::{MutateCategories, Uuid},
-    Category,
+    Listing,
 };
 use api_database::Client;
 use async_graphql::{Context, Object};
@@ -17,8 +17,8 @@ impl CategoryMutation {
     async fn create_category(
         &self,
         ctx: &Context<'_>,
-        input: Category,
-    ) -> async_graphql::Result<Category> {
+        input: Listing,
+    ) -> async_graphql::Result<Listing> {
         let database = ctx.data::<Client>()?;
 
         match database.create_category(&input).await {
@@ -39,8 +39,8 @@ impl CategoryMutation {
         &self,
         ctx: &Context<'_>,
         id: Uuid,
-        input: Category,
-    ) -> async_graphql::Result<Option<Category>> {
+        input: Listing,
+    ) -> async_graphql::Result<Option<Listing>> {
         let database = ctx.data::<Client>()?;
 
         match database.update_category(&id, &input).await {
@@ -60,7 +60,7 @@ impl CategoryMutation {
         &self,
         ctx: &Context<'_>,
         id: Uuid,
-    ) -> async_graphql::Result<Option<Category>> {
+    ) -> async_graphql::Result<Option<Listing>> {
         let database = ctx.data::<Client>()?;
 
         match database.delete_category(&id).await {

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use api_database::Client;
 
-use api_core::{api::MutateCategories, Category};
+use api_core::{api::MutateCategories, Listing};
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 use fake::{faker::lorem::en::Words, Fake};
@@ -42,7 +42,7 @@ fn bench(c: &mut Criterion) {
 
     let sub_categories: Vec<_> = [0; 4].iter().map(|_| Uuid::now_v7()).collect();
 
-    let category = Category {
+    let category = Listing {
         id: Uuid::now_v7(),
         name: words,
         sub_categories: Some(sub_categories),

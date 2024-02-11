@@ -3,11 +3,11 @@ use anyhow::Result;
 use api_core::{
     api::{MutateCategories, QueryCategories},
     reexports::uuid::Uuid,
-    Category,
+    Listing,
 };
 
-fn create_category_item() -> Category {
-    Category {
+fn create_category_item() -> Listing {
+    Listing {
         id: Uuid::now_v7(),
         name: "TestCategoryInput".into(),
         sub_categories: None,
@@ -16,7 +16,7 @@ fn create_category_item() -> Category {
     }
 }
 
-fn check_similarities(source: &Category, dest: &Category) {
+fn check_similarities(source: &Listing, dest: &Listing) {
     assert_eq!(source.name, dest.name);
     assert_eq!(source.sub_categories, dest.sub_categories);
     assert_eq!(source.parent_id, dest.parent_id);

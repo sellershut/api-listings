@@ -1,68 +1,74 @@
 mod async_graphql;
 mod db;
 
-use crate::{tests::db::SampleDbSend, Category};
+use crate::{tests::db::SampleDbSend, Listing};
 
 use self::db::SampleDb;
+use time::OffsetDateTime;
 use uuid::Uuid;
 
-fn create_category() -> Category {
-    Category {
-        id: Uuid::now_v7(),
-        name: String::from("Something"),
-        sub_categories: Some(vec![]),
-        image_url: None,
-        parent_id: None,
+impl Default for Listing {
+    fn default() -> Self {
+        Self {
+            id: Uuid::now_v7(),
+            user_id: Uuid::now_v7(),
+            title: String::from("My listing"),
+            description: String::from("More info about listing"),
+            price: 250.50,
+            category_id: Uuid::now_v7(),
+            image_url: String::from("https://dummyimage.com/420x260"),
+            other_images: None,
+            active: true,
+            tags: None,
+            location: String::default(),
+            likes: 0,
+            created_at: OffsetDateTime::now_utc(),
+            deleted_at: None,
+        }
     }
 }
 
 #[test]
 fn encode() {
-    let category = create_category();
+    let listing = Listing::default();
 
-    let json = serde_json::to_string(&category).unwrap();
+    let json = serde_json::to_string(&listing).unwrap();
     dbg!(&json);
-    let bytes = bincode::serialize(&category).unwrap();
+    let bytes = bincode::serialize(&listing).unwrap();
 
-    let value = serde_json::from_str::<Category>(&json);
+    let value = serde_json::from_str::<Listing>(&json);
     dbg!(&value);
 
     assert!(value.is_ok());
-    let val: Category = bincode::deserialize(&bytes[..]).unwrap();
-    assert_eq!(val, category);
+    let val: Listing = bincode::deserialize(&bytes[..]).unwrap();
+    assert_eq!(val, listing);
 }
 
 #[test]
 fn deserialise_list() {
-    let category = create_category();
+    let listing = Listing::default();
 
-    let category_2 = Category {
-        id: Uuid::now_v7(),
-        name: "Something".into(),
-        sub_categories: None,
-        image_url: None,
-        parent_id: None,
-    };
+    let listing_2 = Listing::default();
 
-    let categories = vec![category, category_2];
+    let listings = vec![listing, listing_2];
 
-    let str_val = serde_json::to_string(&categories);
+    let str_val = serde_json::to_string(&listings);
 
-    let bytes = bincode::serialize(&categories).unwrap();
+    let bytes = bincode::serialize(&listings).unwrap();
 
-    let source = bincode::deserialize::<Vec<Category>>(&bytes[..]).unwrap();
+    let source = bincode::deserialize::<Vec<Listing>>(&bytes[..]).unwrap();
 
     dbg!(&str_val);
 
     assert!(str_val.is_ok());
-    assert_eq!(source, categories);
+    assert_eq!(source, listings);
 }
 
 #[tokio::test]
 async fn trait_blank_queries() {
-    use crate::api::LocalQueryCategories;
+    use crate::api::LocalQueryListings;
 
-    let db = SampleDb.get_categories().await;
+    let db = SampleDb.get_listings().await;
     assert!(db.is_ok());
 
     let generated_id = Uuid::now_v7();
