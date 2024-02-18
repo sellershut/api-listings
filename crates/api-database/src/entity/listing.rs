@@ -12,12 +12,13 @@ pub(crate) struct DatabaseListing {
     pub price: f32,
     pub category_id: RecordId,
     pub image_url: String,
-    pub other_images: Option<Vec<String>>,
+    pub other_images: Vec<String>,
     pub active: bool,
-    pub tags: Option<Vec<RecordId>>,
+    pub tags: Vec<RecordId>,
     pub location: String,
-    pub likes: usize,
+    pub likes: Vec<RecordId>,
     pub created_at: OffsetDateTime,
+    pub updated_at: Option<OffsetDateTime>,
     pub deleted_at: Option<OffsetDateTime>,
 }
 
@@ -44,11 +45,17 @@ impl TryFrom<DatabaseListing> for Listing {
         let category_id_fk = id_to_string(&entity.category_id.id);
         let category_id = Uuid::parse_str(&category_id_fk)?;
 
-        let tags = entity.tags.map_or(Ok(vec![]), |tags| {
-            tags.into_iter()
-                .map(|record_id| Uuid::parse_str(&id_to_string(&record_id.id)))
-                .collect::<Result<Vec<Uuid>, _>>()
-        })?;
+        let tags = entity
+            .tags
+            .into_iter()
+            .map(|record_id| Uuid::parse_str(&id_to_string(&record_id.id)))
+            .collect::<Result<Vec<Uuid>, _>>()?;
+
+        let likes = entity
+            .likes
+            .iter()
+            .map(|like| Uuid::parse_str(&id_to_string(&like.id)))
+            .collect::<Result<Vec<Uuid>, _>>()?;
 
         Ok(Listing {
             id,
@@ -60,11 +67,12 @@ impl TryFrom<DatabaseListing> for Listing {
             other_images: entity.other_images,
             active: entity.active,
             location: entity.location,
-            likes: entity.likes,
+            likes,
             created_at: entity.created_at,
             deleted_at: entity.deleted_at,
-            tags: if tags.is_empty() { None } else { Some(tags) },
+            tags,
             image_url: entity.image_url,
+            updated_at: entity.updated_at,
         })
     }
 }

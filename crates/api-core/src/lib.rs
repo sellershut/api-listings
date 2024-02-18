@@ -21,16 +21,18 @@ pub struct Listing {
     pub price: f32,
     pub category_id: Uuid,
     pub image_url: String,
-    pub other_images: Option<Vec<String>>,
+    #[cfg_attr(feature = "async-graphql", graphql(default))]
+    pub other_images: Vec<String>,
     pub active: bool,
-    pub tags: Option<Vec<Uuid>>,
+    #[cfg_attr(feature = "async-graphql", graphql(default))]
+    pub tags: Vec<Uuid>,
     pub location: String,
     #[cfg_attr(feature = "async-graphql", graphql(skip_input))]
-    pub likes: usize,
+    pub likes: Vec<Uuid>,
     pub created_at: OffsetDateTime,
+    pub updated_at: Option<OffsetDateTime>,
     pub deleted_at: Option<OffsetDateTime>,
 }
-
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

@@ -28,7 +28,7 @@ pub struct AppState {
 impl AppState {
     #[instrument(name = "env.cfg")]
     pub fn try_from_env() -> Result<AppState> {
-        let port: u16 = env::extract_variable("PORT", "3000").parse()?;
+        let port: u16 = env::extract_variable("PORT", "3001").parse()?;
         let otel_collector_endpoint =
             env::extract_variable("OPENTELEMETRY_COLLECTOR_HOST", "http://localhost:4318");
 
