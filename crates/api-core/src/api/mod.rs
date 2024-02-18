@@ -9,17 +9,14 @@ pub use uuid::Uuid;
 #[trait_variant::make(QueryListings: Send)]
 pub trait LocalQueryListings {
     async fn get_listings(&self) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError>;
-    async fn get_listing_by_id(
-        &self,
-        listing_id: impl Into<Uuid> + Send,
-    ) -> Result<Option<Listing>, CoreError>;
+    async fn get_listing_by_id(&self, listing_id: &Uuid) -> Result<Option<Listing>, CoreError>;
     async fn get_listings_from_user(
         &self,
-        user_id: impl Into<Uuid> + Send,
+        user_id: &Uuid,
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError>;
-    async fn get_listings_from_category(
+    async fn get_listings_in_category(
         &self,
-        category_id: impl Into<Uuid> + Send,
+        category_id: &Uuid,
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError>;
     async fn get_listings_in_price_range(
         &self,

@@ -1,4 +1,4 @@
-use std::{fmt::Debug, str::FromStr};
+use std::fmt::Debug;
 
 use uuid::Uuid;
 
@@ -11,72 +11,50 @@ pub struct SampleDb;
 pub struct SampleDbSend;
 
 impl LocalQueryListings for SampleDb {
-    async fn search(
-        &self,
-        _query: impl AsRef<str> + Debug + Send,
-    ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
+    async fn get_listings(&self) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
         Ok([].into_iter())
     }
 
-    async fn get_listings(&self) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
-        todo!()
-    }
-
-    async fn get_listing_by_id(&self, listing_id: impl Into<Uuid>) -> Result<Listing, CoreError> {
-        todo!()
+    async fn get_listing_by_id(&self, _listing_id: &Uuid) -> Result<Option<Listing>, CoreError> {
+        Ok(None)
     }
 
     async fn get_listings_from_user(
         &self,
-        user_id: impl Into<Uuid>,
+        _user_id: &Uuid,
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
-        todo!()
+        Ok([].into_iter())
     }
 
-    async fn get_listings_from_category(
+    async fn get_listings_in_category(
         &self,
-        category_id: impl Into<Uuid>,
+        _category_id: &Uuid,
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
-        todo!()
+        Ok([].into_iter())
     }
 
     async fn get_listings_in_price_range(
         &self,
-        min: f32,
-        max: f32,
+        _min: f32,
+        _max: f32,
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
-        todo!()
-    }
-}
-
-impl LocalMutateCategories for SampleDb {
-    async fn create_category(&self, category: &Listing) -> Result<Listing, CoreError> {
-        Ok(category.to_owned())
+        Ok([].into_iter())
     }
 
-    async fn update_category(
+    async fn search(
         &self,
-        id: &Uuid,
-        data: &Listing,
-    ) -> Result<Option<Listing>, CoreError> {
-        if id.as_ref().is_empty() {
-            Err(CoreError::from_str("Id cannot be empty")?)
-        } else {
-            Ok(Some(data.to_owned()))
-        }
-    }
-
-    async fn delete_category(&self, _id: &Uuid) -> Result<Option<Listing>, CoreError> {
-        Ok(None)
+        _query: impl AsRef<str> + Send + Debug,
+    ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
+        Ok([].into_iter())
     }
 }
 
-impl MutateCategories for SampleDbSend {
-    async fn create_category(&self, category: &Listing) -> Result<Listing, CoreError> {
-        Ok(category.to_owned())
+impl LocalMutateListings for SampleDb {
+    async fn create_listing(&self, listing: &Listing) -> Result<Listing, CoreError> {
+        Ok(listing.to_owned())
     }
 
-    async fn update_category(
+    async fn update_listing(
         &self,
         _id: &Uuid,
         data: &Listing,
@@ -84,30 +62,63 @@ impl MutateCategories for SampleDbSend {
         Ok(Some(data.to_owned()))
     }
 
-    async fn delete_category(&self, _id: &Uuid) -> Result<Option<Listing>, CoreError> {
+    async fn delete_listing(&self, _id: &Uuid) -> Result<Option<Listing>, CoreError> {
         Ok(None)
     }
 }
 
-impl QueryCategories for SampleDbSend {
-    async fn get_categories(&self) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
+impl MutateListings for SampleDbSend {
+    async fn create_listing(&self, listing: &Listing) -> Result<Listing, CoreError> {
+        Ok(listing.to_owned())
+    }
+
+    async fn update_listing(
+        &self,
+        _id: &Uuid,
+        data: &Listing,
+    ) -> Result<Option<Listing>, CoreError> {
+        Ok(Some(data.to_owned()))
+    }
+
+    async fn delete_listing(&self, _id: &Uuid) -> Result<Option<Listing>, CoreError> {
+        Ok(None)
+    }
+}
+
+impl QueryListings for SampleDbSend {
+    async fn get_listings(&self) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
         Ok([].into_iter())
     }
 
-    async fn get_sub_categories(
+    async fn get_listing_by_id(&self, _listing_id: &Uuid) -> Result<Option<Listing>, CoreError> {
+        Ok(None)
+    }
+
+    async fn get_listings_from_user(
         &self,
-        _id: Option<&Uuid>,
+        _user_id: &Uuid,
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
         Ok([].into_iter())
     }
 
-    async fn get_category_by_id(&self, _id: &Uuid) -> Result<Option<Listing>, CoreError> {
-        Ok(None)
+    async fn get_listings_in_category(
+        &self,
+        _category_id: &Uuid,
+    ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
+        Ok([].into_iter())
+    }
+
+    async fn get_listings_in_price_range(
+        &self,
+        _min: f32,
+        _max: f32,
+    ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
+        Ok([].into_iter())
     }
 
     async fn search(
         &self,
-        _query: impl AsRef<str> + Debug + Send,
+        _query: impl AsRef<str> + Send + Debug,
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
         Ok([].into_iter())
     }

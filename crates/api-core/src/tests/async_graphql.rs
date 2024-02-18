@@ -2,14 +2,12 @@ use async_graphql::{EmptySubscription, Object, Schema};
 
 use crate::Listing;
 
-use super::create_category;
-
 struct Root;
 
 #[Object]
 impl Root {
     async fn output(&self) -> Listing {
-        create_category()
+        Listing::default()
     }
 
     async fn input(&self, category: Listing) -> Listing {

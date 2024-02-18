@@ -17,13 +17,14 @@ impl Default for Listing {
             price: 250.50,
             category_id: Uuid::now_v7(),
             image_url: String::from("https://dummyimage.com/420x260"),
-            other_images: None,
+            other_images: vec![],
             active: true,
-            tags: None,
+            tags: vec![],
             location: String::default(),
             likes: vec![],
             created_at: OffsetDateTime::now_utc(),
             deleted_at: None,
+            updated_at: None,
         }
     }
 }
@@ -72,68 +73,70 @@ async fn trait_blank_queries() {
     assert!(db.is_ok());
 
     let generated_id = Uuid::now_v7();
-    let mut id = None;
-    let db = SampleDb.get_sub_categories(id).await;
+    let db = SampleDb.get_listing_by_id(&generated_id).await;
     assert!(db.is_ok());
 
-    id = Some(&generated_id);
-    let db = SampleDb.get_sub_categories(id).await;
+    let db = SampleDb.get_listings().await;
     assert!(db.is_ok());
 
-    let db = SampleDb.get_category_by_id(&generated_id).await;
+    let db = SampleDb.get_listings_from_user(&generated_id).await;
+    assert!(db.is_ok());
+
+    let db = SampleDb.get_listings_in_category(&generated_id).await;
     assert!(db.is_ok());
 }
 
 #[tokio::test]
 async fn trait_blank_mutations() {
-    use crate::api::LocalMutateCategories;
+    use crate::api::LocalMutateListings;
 
-    let category = create_category();
+    let listing = Listing::default();
 
-    let db = SampleDb.create_category(&category).await;
+    let db = SampleDb.create_listing(&listing).await;
     assert!(db.is_ok());
 
     let id = Uuid::now_v7();
-    let db = SampleDb.update_category(&id, &category).await;
+    let db = SampleDb.update_listing(&id, &listing).await;
     assert!(db.is_ok());
 
-    let db = SampleDb.delete_category(&id).await;
+    let db = SampleDb.delete_listing(&id).await;
     assert!(db.is_ok());
 }
 
 #[tokio::test]
 async fn mutation_returns_send() {
-    use crate::api::MutateCategories;
+    use crate::api::MutateListings;
 
-    let category = create_category();
+    let listing = Listing::default();
 
     let id = Uuid::now_v7();
-    let db = SampleDbSend.create_category(&category).await;
+    let db = SampleDbSend.create_listing(&listing).await;
     assert!(db.is_ok());
 
-    let db = SampleDbSend.update_category(&id, &category).await;
+    let db = SampleDbSend.update_listing(&id, &listing).await;
     assert!(db.is_ok());
 
-    let db = SampleDbSend.delete_category(&id).await;
+    let db = SampleDbSend.delete_listing(&id).await;
     assert!(db.is_ok());
 }
 
 #[tokio::test]
 async fn query_returns_send() {
-    use crate::api::QueryCategories;
+    use crate::api::QueryListings;
 
-    let db = SampleDbSend.get_categories().await;
+    let db = SampleDbSend.get_listings().await;
     assert!(db.is_ok());
 
     let generated_id = Uuid::now_v7();
-    let mut id = None;
-    let db = SampleDbSend.get_sub_categories(id).await;
+    let db = SampleDbSend.get_listing_by_id(&generated_id).await;
     assert!(db.is_ok());
 
-    id = Some(&generated_id);
-    let db = SampleDbSend.get_sub_categories(id).await;
+    let db = SampleDbSend.get_listings().await;
     assert!(db.is_ok());
 
-    let db = SampleDbSend.get_category_by_id(&generated_id).await;
+    let db = SampleDbSend.get_listings_from_user(&generated_id).await;
+    assert!(db.is_ok());
+
+    let db = SampleDbSend.get_listings_in_category(&generated_id).await;
     assert!(db.is_ok());
 }

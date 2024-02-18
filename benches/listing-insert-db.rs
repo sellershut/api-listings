@@ -50,14 +50,10 @@ fn bench(c: &mut Criterion) {
         parent_id: None,
     };
 
-    c.bench_with_input(
-        BenchmarkId::new("category insert", size),
-        &size,
-        |b, &_s| {
-            b.to_async(&rt)
-                .iter(|| black_box(client.create_category(&category)));
-        },
-    );
+    c.bench_with_input(BenchmarkId::new("listing insert", size), &size, |b, &_s| {
+        b.to_async(&rt)
+            .iter(|| black_box(client.create_category(&category)));
+    });
 
     // should probably clean everything after inserting
 }
