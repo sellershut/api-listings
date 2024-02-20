@@ -1,0 +1,5 @@
+query categoryById($id: UUID) {
+  categoryById(id: $id) {
+    id
+  }
+}

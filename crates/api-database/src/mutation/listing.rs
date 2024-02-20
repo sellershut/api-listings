@@ -1,4 +1,7 @@
-use crate::{collections::Collections, entity::listing::DatabaseListing};
+use crate::{
+    collections::Collection,
+    entity::{create_thing_from_id, listing::DatabaseEntityListing},
+};
 use api_core::{
     api::{CoreError, MutateListings},
     reexports::uuid::Uuid,
@@ -13,14 +16,62 @@ use crate::{map_db_error, Client};
 impl MutateListings for Client {
     #[instrument(skip(self), err(Debug))]
     async fn create_listing(&self, listing: &Listing) -> Result<Listing, CoreError> {
+        let user = self
+            .http_client
+            .post("http://local")
+            .body(format!(
+                "query {{
+                    userById(id: '{}') {{
+                        id
+                    }}
+                }}",
+                &listing.user_id
+            ))
+            .send();
+
+        let category = self
+            .http_client
+            .post("http://local")
+            .body(format!(
+                "query {{
+                    categoryById(id: '{}') {{
+                        id
+                    }}
+                }}",
+                &listing.category_id
+            ))
+            .send();
+
+        let mut futs = Vec::with_capacity(listing.tags.len());
+        for i in listing.tags.iter() {
+            futs.push(async {
+                self.client
+                    .select::<Option<DatabaseEntityListing>>(create_thing_from_id(
+                        Collection::Tag,
+                        i,
+                    ))
+                    .await
+                    .map_err(map_db_error)
+            });
+        }
+
+        let user_ok = futures_util::future::try_join_all([user, category]).await;
+
+        let tags_exist = futures_util::future::try_join_all(futs).await?;
+        if tags_exist.iter().any(|f| f.is_none()) {
+            return Err(CoreError::Database(String::from(
+                "One or more of your tags does not exist",
+            )));
+        }
+
         // check if user exists,
         // cheeck if category exists
         // check if provided tag exists
         let input = InputListing::from(listing);
         let id = Uuid::now_v7();
-        let item: Option<DatabaseListing> = self
+        let item: Option<DatabaseEntityListing> = self
             .client
-            .create((Collections::Listing.to_string(), id.to_string()))
+            .create((Collection::Listing.to_string(), id.to_string()))
             .content(input)
             .await
             .map_err(map_db_error)?;
@@ -31,6 +82,7 @@ impl MutateListings for Client {
         }
     }
 
+    #[instrument(skip(self), err(Debug))]
     async fn update_listing(
         &self,
         id: &Uuid,
@@ -39,6 +91,7 @@ impl MutateListings for Client {
         todo!()
     }
 
+    #[instrument(skip(self), err(Debug))]
     async fn delete_listing(&self, id: &Uuid) -> Result<Option<Listing>, CoreError> {
         todo!()
     }
@@ -70,7 +123,7 @@ impl<'a> From<&'a Listing> for InputListing<'a> {
             tags: value
                 .tags
                 .iter()
-                .map(|str| RecordId::from((Collections::Tag.to_string(), str.to_string())))
+                .map(|str| RecordId::from((Collection::Tag.to_string(), str.to_string())))
                 .collect(),
             image_url: &value.image_url,
             description: &value.description,

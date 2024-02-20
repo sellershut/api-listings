@@ -3,65 +3,269 @@ use api_core::{
     reexports::uuid::Uuid,
     Listing,
 };
+use meilisearch_sdk::{SearchQuery, SearchResults};
+use tracing::{debug, error, instrument};
 
-use crate::Client;
+use crate::{
+    collections::Collection,
+    entity::{create_thing_from_id, listing::DatabaseEntityListing},
+    map_db_error,
+    redis::{cache_keys::CacheKey, redis_query},
+    Client,
+};
+
+async fn db_get_listings(
+    db: &Client,
+    wait_for_indexing: bool,
+) -> Result<std::vec::IntoIter<Listing>, CoreError> {
+    let listings = if let Some((ref redis, ttl)) = db.redis {
+        let cache_key = CacheKey::AllListings;
+        let listings = redis_query::query::<Vec<Listing>>(cache_key, redis).await;
+
+        if let Some(listings) = listings {
+            listings
+        } else {
+            let listings: Vec<DatabaseEntityListing> = db
+                .client
+                .select(Collection::Listing)
+                .await
+                .map_err(map_db_error)?;
+
+            let listings = listings
+                .into_iter()
+                .map(Listing::try_from)
+                .collect::<Result<Vec<Listing>, CoreError>>()?;
+
+            if let Err(e) = redis_query::update(cache_key, redis, &listings, ttl).await {
+                error!(key = %cache_key, "[redis update]: {e}");
+            }
+
+            listings
+        }
+    } else {
+        let listings: Vec<DatabaseEntityListing> = db
+            .client
+            .select(Collection::Listing)
+            .await
+            .map_err(map_db_error)?;
+        listings
+            .into_iter()
+            .map(Listing::try_from)
+            .collect::<Result<Vec<Listing>, CoreError>>()?
+    };
+
+    if let Some(ref client) = db.search_client {
+        debug!("indexing listings for search");
+        let index = client.index("listings");
+        let res = index
+            .add_documents(&listings, Some("id"))
+            .await
+            .map_err(|e| CoreError::Other(e.to_string()))?;
+
+        if wait_for_indexing {
+            debug!("waiting for completion");
+            let _res = res.wait_for_completion(client, None, None).await;
+        }
+    }
+
+    Ok(listings.into_iter())
+}
+
+async fn get_listings_by_field(
+    db: &Client,
+    field: &str,
+    id: &Uuid,
+) -> Result<std::vec::IntoIter<Listing>, CoreError> {
+    let collection = Collection::from(field);
+    let field_id_value = create_thing_from_id(collection, id);
+    let cache_key = match collection {
+        Collection::Listing => todo!(),
+        Collection::User => CacheKey::UserListing { user_id: id },
+        Collection::Tag => todo!(),
+    };
+
+    if let Some((ref redis, ttl)) = db.redis {
+        let listings = redis_query::query::<Vec<Listing>>(cache_key, redis).await;
+
+        if let Some(listings) = listings {
+            Ok(listings.into_iter())
+        } else {
+            let mut listings = db
+                .client
+                .query(format!(
+                    "SELECT * FROM type::table($table) WHERE {field} = type::string($value)"
+                ))
+                .bind(("table", Collection::Listing))
+                .bind(("value", field_id_value))
+                .await
+                .map_err(map_db_error)?;
+
+            let listings: Vec<DatabaseEntityListing> = listings.take(0).map_err(map_db_error)?;
+
+            let items: Result<Vec<Listing>, _> =
+                listings.into_iter().map(Listing::try_from).collect();
+
+            let listings = items?;
+
+            if let Err(e) = redis_query::update(cache_key, redis, &listings, ttl).await {
+                error!(key = %cache_key, "[redis update]: {e}");
+            }
+            Ok(listings.into_iter())
+        }
+    } else {
+        let mut listings = db
+            .client
+            .query(format!(
+                "SELECT * FROM type::table($table) WHERE {field} = type::string($value)"
+            ))
+            .bind(("table", Collection::Listing))
+            .bind(("value", field_id_value))
+            .await
+            .map_err(map_db_error)?;
+
+        let listings: Vec<DatabaseEntityListing> = listings.take(0).map_err(map_db_error)?;
+
+        let items: Result<Vec<Listing>, _> = listings.into_iter().map(Listing::try_from).collect();
+
+        let listings = items?;
+
+        Ok(listings.into_iter())
+    }
+}
 
 impl QueryListings for Client {
-    async fn search(
-        &self,
-        query: impl AsRef<str> + Send + std::fmt::Debug,
-    ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
-        Ok(vec![].into_iter())
-    }
-
+    #[instrument(skip(self), err(Debug))]
     async fn get_listings(&self) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
-        Ok(vec![].into_iter())
+        db_get_listings(self, false).await
     }
 
-    async fn get_listing_by_id(
-        &self,
-        listing_id: impl Into<Uuid> + Send,
-    ) -> Result<Option<Listing>, CoreError> {
-        todo!()
+    #[instrument(skip(self), err(Debug))]
+    async fn get_listing_by_id(&self, listing_id: &Uuid) -> Result<Option<Listing>, CoreError> {
+        let id = create_thing_from_id(Collection::Listing, listing_id);
+        if let Some((ref redis, ttl)) = self.redis {
+            let cache_key = CacheKey::Listing { id: listing_id };
+
+            let listing = redis_query::query::<Listing>(cache_key, redis).await;
+
+            if listing.is_some() {
+                Ok(listing)
+            } else {
+                let listing: Option<DatabaseEntityListing> =
+                    self.client.select(id).await.map_err(map_db_error)?;
+                let listing = listing.and_then(|f| match Listing::try_from(f) {
+                    Ok(cat) => Some(cat),
+                    Err(e) => {
+                        error!("{e}");
+                        None
+                    }
+                });
+
+                if let Err(e) = redis_query::update(cache_key, redis, listing.as_ref(), ttl).await {
+                    error!(key = %cache_key, "[redis update]: {e}");
+                }
+                Ok(listing)
+            }
+        } else {
+            let listing: Option<DatabaseEntityListing> =
+                self.client.select(id).await.map_err(map_db_error)?;
+            let listing = listing.and_then(|f| match Listing::try_from(f) {
+                Ok(cat) => Some(cat),
+                Err(e) => {
+                    error!("{e}");
+                    None
+                }
+            });
+
+            Ok(listing)
+        }
     }
 
+    #[instrument(skip(self), err(Debug))]
     async fn get_listings_from_user(
         &self,
-        user_id: impl Into<Uuid> + Send,
+        user_id: &Uuid,
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
-        Ok(vec![].into_iter())
+        get_listings_by_field(self, "user_id", user_id).await
     }
 
-    async fn get_listings_from_category(
+    #[instrument(skip(self), err(Debug))]
+    async fn get_listings_in_category(
         &self,
-        category_id: impl Into<Uuid> + Send,
+        category_id: &Uuid,
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
-        Ok(vec![].into_iter())
+        get_listings_by_field(self, "category_id", category_id).await
     }
 
+    #[instrument(skip(self), err(Debug))]
     async fn get_listings_in_price_range(
         &self,
         min: f32,
         max: f32,
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
-        Ok(vec![].into_iter())
-    }
-}
+        let listings = if let Some((ref redis, ttl)) = self.redis {
+            let cache_key = CacheKey::AllListings;
+            let listings = redis_query::query::<Vec<Listing>>(cache_key, redis).await;
 
-/* impl Client {
-    pub async fn search_with_parent_name(
+            if let Some(listings) = listings {
+                listings
+            } else {
+                let mut listings = self
+                    .client
+                    .query(format!(
+                        "SELECT * FROM {} where price >= {min} and price <= {max}",
+                        Collection::Listing
+                    ))
+                    .await
+                    .map_err(map_db_error)?;
+
+                let listings: Vec<DatabaseEntityListing> =
+                    listings.take(0).map_err(map_db_error)?;
+
+                let listings = listings
+                    .into_iter()
+                    .map(Listing::try_from)
+                    .collect::<Result<Vec<Listing>, CoreError>>()?;
+
+                if let Err(e) = redis_query::update(cache_key, redis, &listings, ttl).await {
+                    error!(key = %cache_key, "[redis update]: {e}");
+                }
+
+                listings
+            }
+        } else {
+            let mut listings = self
+                .client
+                .query("SELECT * FROM type::table($table) where price >= type::number($min) and price <= type::number($max)")
+                .bind(("table", Collection::Listing))
+                .bind(("min", min))
+                .bind(("max", max))
+                .await
+                .map_err(map_db_error)?;
+
+            let listings: Vec<DatabaseEntityListing> = listings.take(0).map_err(map_db_error)?;
+
+            listings
+                .into_iter()
+                .map(Listing::try_from)
+                .collect::<Result<Vec<Listing>, CoreError>>()?
+        };
+
+        Ok(listings.into_iter())
+    }
+
+    #[instrument(skip(self), err(Debug))]
+    async fn search(
         &self,
-        query: &str,
-    ) -> Result<Vec<(Listing, Option<String>)>, CoreError> {
+        query: impl AsRef<str> + Send + std::fmt::Debug,
+    ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
         if let Some(ref client) = self.search_client {
             let mut index = None;
             for _retries in 0..3 {
-                if let Ok(idx) = client.get_index("categories").await {
+                if let Ok(idx) = client.get_index("listings").await {
                     index = Some(idx);
                     break;
-                } else {
-                    let _categories = db_get_categories(self).await?;
                 }
+                let _categories = db_get_listings(self, true).await?;
             }
             match index {
                 Some(index) => {
@@ -72,48 +276,29 @@ impl QueryListings for Client {
                         .await
                         .map_err(|e| CoreError::Other(e.to_string()))?;
 
-                    let parent_ids: Vec<_> = results
-                        .hits
-                        .iter()
-                        .filter_map(|f| f.result.parent_id.map(|parent_id| parent_id.to_string()))
-                        .collect();
-                    let parent_ids_str: Vec<&str> = parent_ids.iter().map(|f| f.as_str()).collect();
-
-                    let futures = parent_ids_str
-                        .iter()
-                        .map(|parent_id| index.get_document::<Listing>(parent_id));
-
-                    let res: Vec<Listing> = futures_util::future::try_join_all(futures)
-                        .await
-                        .map_err(|e| CoreError::Other(e.to_string()))?;
-
-                    let search_results: Vec<_> = results
+                    let search_results: Vec<Listing> = results
                         .hits
                         .into_iter()
-                        .map(|hit| {
-                            let category = Listing {
-                                id: hit.result.id,
-                                name: hit.result.name,
-                                sub_categories: hit.result.sub_categories,
-                                parent_id: hit.result.parent_id,
-                                image_url: hit.result.image_url,
-                            };
-                            let parent = if let Some(parent_id) = hit.result.parent_id {
-                                res.iter().find_map(|category| {
-                                    if parent_id == category.id {
-                                        Some(category.name.to_owned())
-                                    } else {
-                                        None
-                                    }
-                                })
-                            } else {
-                                None
-                            };
-                            (category, parent)
+                        .map(|hit| Listing {
+                            id: hit.result.id,
+                            user_id: hit.result.user_id,
+                            title: hit.result.title,
+                            description: hit.result.description,
+                            price: hit.result.price,
+                            category_id: hit.result.category_id,
+                            image_url: hit.result.image_url,
+                            other_images: hit.result.other_images,
+                            active: hit.result.active,
+                            tags: hit.result.tags,
+                            location: hit.result.location,
+                            likes: hit.result.likes,
+                            created_at: hit.result.created_at,
+                            updated_at: hit.result.updated_at,
+                            deleted_at: hit.result.deleted_at,
                         })
                         .collect();
 
-                    Ok(search_results)
+                    Ok(search_results.into_iter())
                 }
                 None => Err(CoreError::Other(
                     "items could not be indexed for search".into(),
@@ -125,4 +310,31 @@ impl QueryListings for Client {
             )))
         }
     }
-} */
+
+    #[instrument(skip(self), err(Debug))]
+    async fn get_listings_with_tags(
+        &self,
+        tags: &[&Uuid],
+    ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
+        let tags_vals: Vec<_> = tags
+            .iter()
+            .map(|f| create_thing_from_id(Collection::Tag, f))
+            .collect();
+
+        let mut query = self
+            .client
+            .query("SELECT * FROM type::table($table) WHERE tags CONTAINSANY type::array($values)")
+            .bind(("table", Collection::Listing))
+            .bind(("values", &tags_vals))
+            .await
+            .map_err(map_db_error)?;
+
+        let result: Vec<DatabaseEntityListing> = query.take(0).map_err(map_db_error)?;
+        let result = result
+            .into_iter()
+            .map(Listing::try_from)
+            .collect::<Result<Vec<Listing>, CoreError>>()?;
+
+        Ok(result.into_iter())
+    }
+}

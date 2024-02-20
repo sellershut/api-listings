@@ -5,28 +5,20 @@ use redis::ToRedisArgs;
 
 #[derive(Clone, Copy)]
 pub enum CacheKey<'a> {
-    AllCategories,
-    SubCategories { parent: Option<&'a Uuid> },
-    Category { id: &'a Uuid },
+    AllListings,
+    UserListing { user_id: &'a Uuid },
+    Listing { id: &'a Uuid },
 }
 
 impl Display for CacheKey<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "categories:{}",
+            "listings:{}",
             match self {
-                CacheKey::AllCategories => "all".to_string(),
-                CacheKey::SubCategories { parent } => format!(
-                    "parent={}",
-                    match parent {
-                        Some(id) => id.to_string(),
-                        None => {
-                            String::default()
-                        }
-                    }
-                ),
-                CacheKey::Category { id } => format!("id={id}"),
+                CacheKey::AllListings => "all".to_string(),
+                CacheKey::UserListing { user_id } => format!("from_user={user_id}"),
+                CacheKey::Listing { id } => format!("id={id}"),
             }
         )
     }

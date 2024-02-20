@@ -1,8 +1,11 @@
+use std::sync::Arc;
+
 use api_core::api::CoreError;
 use thiserror::Error;
 
 mod collections;
 pub(crate) mod entity;
+mod graphql_requests;
 mod mutation;
 mod query;
 mod redis;
@@ -24,9 +27,25 @@ pub struct Client {
     client: Surreal<SurrealClient>,
     redis: Option<(RedisPool, u64)>,
     search_client: Option<meilisearch_sdk::Client>,
+    http_client: reqwest::Client,
+    users_api: Arc<str>,
+    categories_api: Arc<str>,
 }
 
 impl Client {
+    #[instrument(skip_all)]
+    pub async fn with_redis(&mut self, dsn: &str, is_cluster: bool, pool_size: u16, ttl: u64) {
+        trace!("connecting to redis");
+        self.redis = Some((
+            if is_cluster {
+                redis::new_redis_pool_clustered(dsn, pool_size).await
+            } else {
+                redis::new_redis_pool(dsn, pool_size).await
+            },
+            ttl,
+        ))
+    }
+
     #[instrument(skip_all)]
     pub async fn try_new(
         dsn: &str,
@@ -34,8 +53,8 @@ impl Client {
         password: &str,
         namespace: &str,
         database: &str,
-        redis: Option<(&str, bool, u16, u64)>,
-        meilisearch: Option<(&str, Option<&str>)>,
+        users_api: &str,
+        categories_api: &str,
     ) -> Result<Self, ClientError> {
         trace!("connecting to database");
         let db = Surreal::new::<Ws>(dsn).await?;
@@ -45,22 +64,22 @@ impl Client {
 
         db.use_ns(namespace).use_db(database).await?;
 
+        let http_client = reqwest::Client::new();
+
         Ok(Client {
             client: db,
-            search_client: meilisearch
-                .map(|(host, api_key)| meilisearch_sdk::Client::new(host, api_key)),
-            redis: match redis {
-                Some((dsn, clustered, size, ttl)) => Some((
-                    if clustered {
-                        redis::new_redis_pool_clustered(dsn, size).await
-                    } else {
-                        redis::new_redis_pool(dsn, size).await
-                    },
-                    ttl,
-                )),
-                None => None,
-            },
+            search_client: None,
+            redis: None,
+            http_client,
+            users_api: users_api.into(),
+            categories_api: categories_api.into(),
         })
+    }
+
+    #[instrument(skip_all)]
+    pub fn with_meilisearch(&mut self, host: &str, api_key: Option<impl Into<String>>) {
+        trace!("connecting to meilisearch");
+        self.search_client = Some(meilisearch_sdk::Client::new(host, api_key));
     }
 }
 

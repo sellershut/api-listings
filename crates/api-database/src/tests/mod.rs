@@ -21,6 +21,8 @@ async fn create_client(
     let db_name = std::env::var("TEST_DATABASE_NAME").expect("TEST_DATABASE_NAME");
     let meilisearch_host = std::env::var("MEILISEARCH_HOST").expect("MEILISEARCH_HOST");
     let meilisearch_api_key = std::env::var("MEILISEARCH_API_KEY").expect("MEILISEARCH_API_KEY");
+    let users_api = std::env::var("USERS_API").expect("TEST_USERS_API");
+    let categories_api = std::env::var("CATEGORIES_API").expect("CATEGORIES_API");
     let meilisearch_api_key = if meilisearch_api_key.is_empty() {
         None
     } else {
@@ -29,24 +31,24 @@ async fn create_client(
 
     let redis_host = std::env::var("TEST_REDIS_HOST").expect("TEST_REDIS_HOST");
 
-    let client = Client::try_new(
+    let mut client = Client::try_new(
         &db_host,
         &username,
         &password,
         with_ns.unwrap_or(&db_namespace),
         &db_name,
-        if with_redis {
-            Some((&redis_host, false, 10, 5000))
-        } else {
-            None
-        },
-        if with_search {
-            Some((&meilisearch_host, meilisearch_api_key.as_deref()))
-        } else {
-            None
-        },
+        &users_api,
+        &categories_api,
     )
     .await?;
+
+    if with_redis {
+        client.with_redis(&redis_host, false, 10, 5000);
+    }
+
+    if with_search {
+        client.with_meilisearch(&meilisearch_host, meilisearch_api_key.as_deref());
+    }
 
     Ok(client)
 }

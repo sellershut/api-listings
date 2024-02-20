@@ -4,7 +4,7 @@ use surrealdb::{opt::RecordId, sql::Id};
 use time::OffsetDateTime;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub(crate) struct DatabaseListing {
+pub(crate) struct DatabaseEntityListing {
     pub id: RecordId,
     pub user_id: RecordId,
     pub title: String,
@@ -22,10 +22,10 @@ pub(crate) struct DatabaseListing {
     pub deleted_at: Option<OffsetDateTime>,
 }
 
-impl TryFrom<DatabaseListing> for Listing {
+impl TryFrom<DatabaseEntityListing> for Listing {
     type Error = CoreError;
 
-    fn try_from(entity: DatabaseListing) -> Result<Self, Self::Error> {
+    fn try_from(entity: DatabaseEntityListing) -> Result<Self, Self::Error> {
         let id_to_string = |id: &Id| -> String {
             let id = id.to_raw();
             id.split(':')
