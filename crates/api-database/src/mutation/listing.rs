@@ -2,6 +2,7 @@ use crate::{
     collections::Collection,
     entity::{create_thing_from_id, listing::DatabaseEntityListing, tag::DatabaseEntityTag},
     graphql_requests::{find_category_by_id, find_user_by_id},
+    redis::{cache_keys::CacheKey, PoolLike, PooledConnectionLike},
 };
 use api_core::{
     api::{CoreError, MutateListings},
@@ -10,13 +11,14 @@ use api_core::{
 };
 use surrealdb::opt::RecordId;
 use time::OffsetDateTime;
-use tracing::{instrument, Instrument};
+use tracing::{debug, error, instrument, Instrument};
 
 use crate::{map_db_error, Client};
 
 impl MutateListings for Client {
     #[instrument(skip(self), err(Debug))]
     async fn create_listing(&self, listing: &Listing) -> Result<Listing, CoreError> {
+        // check if category exists
         let category_result = find_category_by_id(
             &self.http_client,
             &self.categories_api,
@@ -25,6 +27,7 @@ impl MutateListings for Client {
             },
         );
 
+        // check if user exists,
         let user_result = find_user_by_id(
             &self.http_client,
             &self.users_api,
@@ -50,12 +53,6 @@ impl MutateListings for Client {
             .instrument(tracing::info_span!("verifying tags"))
             .await?;
 
-        if tags_exist.iter().any(|f| f.is_none()) {
-            return Err(CoreError::Database(String::from(
-                "One or more of your tags does not exist",
-            )));
-        }
-
         if !category_ok {
             return Err(CoreError::Database(format!(
                 "category: {} does not exist",
@@ -70,9 +67,13 @@ impl MutateListings for Client {
             )));
         }
 
-        // check if user exists,
-        // cheeck if category exists
-        // check if provided tag exists
+        // check if provided tags exist
+        if !tags_exist.is_empty() && tags_exist.iter().any(|f| f.is_none()) {
+            return Err(CoreError::Database(String::from(
+                "One or more of your tags does not exist",
+            )));
+        }
+
         let input = InputListing::from(listing);
         let id = Uuid::now_v7();
         let item: Option<DatabaseEntityListing> = self
@@ -83,7 +84,28 @@ impl MutateListings for Client {
             .map_err(map_db_error)?;
 
         match item {
-            Some(e) => Listing::try_from(e),
+            Some(e) => {
+                let listing = Listing::try_from(e)?;
+                if let Some((ref redis, _ttl)) = self.redis {
+                    match redis.get().await {
+                        Ok(mut pool) => {
+                            let mut pipe = redis::Pipeline::new();
+                            pipe.del(CacheKey::AllListings).del(CacheKey::UserListing {
+                                user_id: &listing.user_id,
+                            });
+
+                            if let Err(e) = pool.query_async_pipeline::<()>(pipe).await {
+                                error!("{e}");
+                            }
+                        }
+                        Err(e) => {
+                            error!("{e}");
+                        }
+                    }
+                };
+                debug!("listing created");
+                Ok(listing)
+            }
             None => Err(CoreError::Unreachable),
         }
     }
