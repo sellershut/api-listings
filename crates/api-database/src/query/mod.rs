@@ -145,9 +145,9 @@ impl QueryListings for Client {
         if let Some((ref redis, ttl)) = self.redis {
             let cache_key = CacheKey::Listing { id: listing_id };
 
-            let listing = redis_query::query::<Listing>(cache_key, redis).await;
+            let listing = redis_query::query::<Option<Listing>>(cache_key, redis).await;
 
-            if listing.is_some() {
+            if let Some(listing) = listing {
                 Ok(listing)
             } else {
                 let listing: Option<DatabaseEntityListing> =
@@ -211,10 +211,9 @@ impl QueryListings for Client {
             } else {
                 let mut listings = self
                     .client
-                    .query(format!(
-                        "SELECT * FROM {} where price >= {min} and price <= {max}",
-                        Collection::Listing
-                    ))
+                    .query( "SELECT * FROM {} where price >= type::decimal($min) and price <= type::decimal($max)").bind(("table", Collection::Listing))
+                    .bind(("min", min))
+                    .bind(("max", max))
                     .await
                     .map_err(map_db_error)?;
 
@@ -235,7 +234,7 @@ impl QueryListings for Client {
         } else {
             let mut listings = self
                 .client
-                .query("SELECT * FROM type::table($table) where price >= type::number($min) and price <= type::number($max)")
+                .query("SELECT * FROM type::table($table) where price >= type::decimal($min) and price <= type::decimal($max)")
                 .bind(("table", Collection::Listing))
                 .bind(("min", min))
                 .bind(("max", max))
