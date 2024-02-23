@@ -14,9 +14,58 @@
     },
     {
       "matchPackagePatterns": [
+        "anyhow",
+        "thiserror"
+      ],
+      "automerge": true,
+      "groupName": "error-handling"
+    },
+    {
+      "matchPackagePatterns": [
         "async-graphql"
       ],
-      "groupName": "async-graphql"
+      "groupName": "async-graphql",
+      "automerge": true,
+      "matchCurrentVersion": "!/^0/",
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ]
+    },
+    {
+      "groupName": "tracing",
+      "automerge": true,
+      "matchPackagePatterns": [
+        "^tracing"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ]
+    },
+    {
+      "groupName": "serde",
+      "automerge": true,
+      "matchPackagePatterns": [
+        "^serde"
+      ],
+      "matchCurrentVersion": "!/^0/",
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ]
+    },
+    {
+      "groupName": "tokio",
+      "automerge": true,
+      "matchPackagePatterns": [
+        "tokio"
+      ],
+      "matchCurrentVersion": "!/^0/",
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ]
     }
   ]
 }
