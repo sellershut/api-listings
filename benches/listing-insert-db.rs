@@ -15,6 +15,8 @@ async fn create_client(with_ns: Option<&str>) -> Result<Client> {
     let password = std::env::var("TEST_DATABASE_PASSWORD").expect("TEST_DATABASE_PASSWORD");
     let db_namespace = std::env::var("TEST_DATABASE_NAMESPACE").expect("TEST_DATABASE_NAMESPACE");
     let db_name = std::env::var("TEST_DATABASE_NAME").expect("TEST_DATABASE_NAME");
+    let users_api = std::env::var("USERS_API").expect("TEST_USERS_API");
+    let categories_api = std::env::var("CATEGORIES_API").expect("CATEGORIES_API");
 
     let client = Client::try_new(
         &db_host,
@@ -22,8 +24,8 @@ async fn create_client(with_ns: Option<&str>) -> Result<Client> {
         &password,
         with_ns.unwrap_or(&db_namespace),
         &db_name,
-        None,
-        None,
+        &users_api,
+        &categories_api,
     )
     .await?;
 

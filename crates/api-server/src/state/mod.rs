@@ -1,7 +1,7 @@
 pub mod env;
 
 use anyhow::{Ok, Result};
-use api_interface::{DatabaseCredentials, RedisConfig};
+use api_interface::{Apis, DatabaseCredentials, RedisConfig};
 use metrics_exporter_prometheus::PrometheusHandle;
 use tracing::{error, instrument, warn};
 
@@ -23,6 +23,8 @@ pub struct AppState {
     cache_ttl: u64,
     meilisearch_host: String,
     meilisearch_api_key: Option<String>,
+    api_users: String,
+    api_categories: String,
 }
 
 impl AppState {
@@ -79,9 +81,15 @@ impl AppState {
             Some(meilisearch_api_key)
         };
 
+        let api_users = env::extract_variable("API_SELLERSHUT_USERS", "http://localhost:3001");
+        let api_categories =
+            env::extract_variable("API_SELLERSHUT_CATEGORIES", "http://localhost:3000");
+
         let metrics_handle = setup_metrics_recorder()?;
 
         Ok(AppState {
+            api_users,
+            api_categories,
             port,
             otel_collector_endpoint,
             database_dsn,
@@ -120,6 +128,13 @@ impl AppState {
             db_pass: &self.database_password,
             db_ns: &self.database_namespace,
             db: &self.database_name,
+        }
+    }
+
+    pub fn apis(&self) -> Apis {
+        Apis {
+            users: &self.api_users,
+            categories: &self.api_categories,
         }
     }
 

@@ -14,7 +14,7 @@ pub struct ListingMutation;
 #[Object]
 impl ListingMutation {
     #[instrument(skip(ctx), err(Debug))]
-    async fn create_category(
+    async fn create_listing(
         &self,
         ctx: &Context<'_>,
         input: Listing,
@@ -35,7 +35,7 @@ impl ListingMutation {
     }
 
     #[instrument(skip(ctx), err(Debug))]
-    async fn update_category(
+    async fn update_listing(
         &self,
         ctx: &Context<'_>,
         id: Uuid,
@@ -44,19 +44,19 @@ impl ListingMutation {
         let database = ctx.data::<Client>()?;
 
         match database.update_listing(&id, &input).await {
-            Ok(category) => {
+            Ok(listing) => {
                 SimpleBroker::publish(ListingChanged {
                     mutation_type: super::MutationType::Updated,
                     id,
                 });
-                Ok(category)
+                Ok(listing)
             }
             Err(e) => Err(e.into()),
         }
     }
 
     #[instrument(skip(ctx), err(Debug))]
-    async fn delete_category(
+    async fn delete_listing(
         &self,
         ctx: &Context<'_>,
         id: Uuid,
@@ -64,12 +64,12 @@ impl ListingMutation {
         let database = ctx.data::<Client>()?;
 
         match database.delete_listing(&id).await {
-            Ok(category) => {
+            Ok(listing) => {
                 SimpleBroker::publish(ListingChanged {
                     mutation_type: super::MutationType::Deleted,
                     id,
                 });
-                Ok(category)
+                Ok(listing)
             }
             Err(e) => Err(e.into()),
         }

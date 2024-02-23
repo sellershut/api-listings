@@ -18,7 +18,7 @@ pub struct SearchResult {
 #[Object]
 impl ListingQuery {
     #[instrument(skip(ctx), err(Debug))]
-    async fn categories(
+    async fn listings(
         &self,
         ctx: &Context<'_>,
         #[graphql(validator(min_length = 1, max_length = 100))] after: Option<String>,
@@ -30,9 +30,9 @@ impl ListingQuery {
 
         let database = extract_db(ctx)?;
 
-        let categories = database.get_listings().await?;
+        let listings = database.get_listings().await?;
 
-        paginate(categories, p, 100).await
+        paginate(listings, p, 100).await
     }
 
     #[instrument(skip(ctx), err(Debug))]
@@ -43,7 +43,7 @@ impl ListingQuery {
     ) -> async_graphql::Result<Option<Listing>> {
         let database = extract_db(ctx)?;
 
-        database.get_listing_by_id(id).await.map_err(|e| e.into())
+        database.get_listing_by_id(&id).await.map_err(|e| e.into())
     }
 
     #[instrument(skip(ctx), err(Debug))]
@@ -60,8 +60,8 @@ impl ListingQuery {
 
         let database = extract_db(ctx)?;
 
-        let categories = database.search(&query).await?;
+        let listings = database.search(&query).await?;
 
-        paginate(categories, p, 100).await
+        paginate(listings, p, 100).await
     }
 }

@@ -24,6 +24,12 @@ pub struct RedisConfig<'a> {
     pub ttl: u64,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Apis<'a> {
+    pub users: &'a str,
+    pub categories: &'a str,
+}
+
 pub struct ApiSchemaBuilder {
     builder: SchemaBuilder<Query, Mutation, Subscription>,
 }
@@ -40,18 +46,29 @@ impl ApiSchemaBuilder {
         database: DatabaseCredentials<'_>,
         redis: Option<RedisConfig<'_>>,
         meilisearch: Option<(&str, Option<&str>)>,
+        apis: Apis<'_>,
     ) -> Result<Self, SchemaError> {
         trace!("creating database client");
-        let db_client = Client::try_new(
+        let mut db_client = Client::try_new(
             database.db_dsn,
             database.db_user,
             database.db_pass,
             database.db_ns,
             database.db,
-            redis.map(|f| (f.redis_dsn, f.clustered, f.pool_size, f.ttl)),
-            meilisearch,
+            apis.users,
+            apis.categories,
         )
         .await?;
+
+        if let Some((host, api_key)) = meilisearch {
+            db_client.with_meilisearch(host, api_key);
+        }
+
+        if let Some(redis) = redis {
+            db_client
+                .with_redis(redis.redis_dsn, redis.clustered, redis.pool_size, redis.ttl)
+                .await;
+        }
 
         info!("database database client created");
 

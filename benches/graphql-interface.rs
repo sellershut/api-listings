@@ -1,4 +1,4 @@
-use api_interface::DatabaseCredentials;
+use api_interface::{Apis, DatabaseCredentials};
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 fn bench(c: &mut Criterion) {
@@ -11,6 +11,11 @@ fn bench(c: &mut Criterion) {
     let username = std::env::var("TEST_DATABASE_USERNAME").expect("TEST_DATABASE_USERNAME");
     let password = std::env::var("TEST_DATABASE_PASSWORD").expect("TEST_DATABASE_PASSWORD");
     let db_name = std::env::var("TEST_DATABASE_NAME").expect("TEST_DATABASE_NAME");
+
+    let api_users = std::env::var("TEST_SELLERSHUT_API_USERS").expect("TEST_SELLERSHUT_API_USERS");
+    let api_categories =
+        std::env::var("TEST_SELLERSHUT_API_CATEGORIES").expect("TEST_SELLERSHUT_API_CATEGORIES");
+
     let credentials = DatabaseCredentials {
         db_dsn: &db_host,
         db_user: &username,
@@ -19,11 +24,17 @@ fn bench(c: &mut Criterion) {
         db: &db_name,
     };
 
+    let apis = Apis {
+        users: &api_users,
+        categories: &api_categories,
+    };
+
     let schema = rt
         .block_on(api_interface::ApiSchemaBuilder::new(
             credentials,
             None,
             None,
+            apis,
         ))
         .unwrap();
 

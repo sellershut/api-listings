@@ -1,7 +1,9 @@
 use api_core::{api::CoreError, reexports::uuid::Uuid, Listing};
 use serde::{Deserialize, Serialize};
-use surrealdb::{opt::RecordId, sql::Id};
+use surrealdb::opt::RecordId;
 use time::OffsetDateTime;
+
+use super::create_string_from_id;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct DatabaseEntityListing {
@@ -26,35 +28,25 @@ impl TryFrom<DatabaseEntityListing> for Listing {
     type Error = CoreError;
 
     fn try_from(entity: DatabaseEntityListing) -> Result<Self, Self::Error> {
-        let id_to_string = |id: &Id| -> String {
-            let id = id.to_raw();
-            id.split(':')
-                .next()
-                .unwrap_or(&id)
-                .chars()
-                .filter(|&c| c != '⟨' && c != '⟩')
-                .collect()
-        };
-
-        let pk = id_to_string(&entity.id.id);
+        let pk = create_string_from_id(&entity.id);
         let id = Uuid::parse_str(&pk)?;
 
-        let user_id_fk = id_to_string(&entity.user_id.id);
+        let user_id_fk = create_string_from_id(&entity.user_id);
         let user_id = Uuid::parse_str(&user_id_fk)?;
 
-        let category_id_fk = id_to_string(&entity.category_id.id);
+        let category_id_fk = create_string_from_id(&entity.category_id);
         let category_id = Uuid::parse_str(&category_id_fk)?;
 
         let tags = entity
             .tags
             .into_iter()
-            .map(|record_id| Uuid::parse_str(&id_to_string(&record_id.id)))
+            .map(|record_id| Uuid::parse_str(&create_string_from_id(&record_id)))
             .collect::<Result<Vec<Uuid>, _>>()?;
 
         let likes = entity
             .likes
             .iter()
-            .map(|like| Uuid::parse_str(&id_to_string(&like.id)))
+            .map(|like| Uuid::parse_str(&create_string_from_id(like)))
             .collect::<Result<Vec<Uuid>, _>>()?;
 
         Ok(Listing {

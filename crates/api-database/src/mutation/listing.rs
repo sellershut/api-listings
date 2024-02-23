@@ -1,6 +1,7 @@
 use crate::{
     collections::Collection,
-    entity::{create_thing_from_id, listing::DatabaseEntityListing},
+    entity::{create_thing_from_id, listing::DatabaseEntityListing, tag::DatabaseEntityTag},
+    graphql_requests::{find_category_by_id, find_user_by_id},
 };
 use api_core::{
     api::{CoreError, MutateListings},
@@ -9,58 +10,63 @@ use api_core::{
 };
 use surrealdb::opt::RecordId;
 use time::OffsetDateTime;
-use tracing::instrument;
+use tracing::{instrument, Instrument};
 
 use crate::{map_db_error, Client};
 
 impl MutateListings for Client {
     #[instrument(skip(self), err(Debug))]
     async fn create_listing(&self, listing: &Listing) -> Result<Listing, CoreError> {
-        let user = self
-            .http_client
-            .post("http://local")
-            .body(format!(
-                "query {{
-                    userById(id: '{}') {{
-                        id
-                    }}
-                }}",
-                &listing.user_id
-            ))
-            .send();
+        let category_result = find_category_by_id(
+            &self.http_client,
+            &self.categories_api,
+            crate::graphql_requests::category_by_id::Variables {
+                id: listing.category_id,
+            },
+        );
 
-        let category = self
-            .http_client
-            .post("http://local")
-            .body(format!(
-                "query {{
-                    categoryById(id: '{}') {{
-                        id
-                    }}
-                }}",
-                &listing.category_id
-            ))
-            .send();
+        let user_result = find_user_by_id(
+            &self.http_client,
+            &self.users_api,
+            crate::graphql_requests::user_by_id::Variables {
+                id: listing.user_id,
+            },
+        );
+
+        let (category_ok, user_ok) =
+            futures_util::future::try_join(category_result, user_result).await?;
 
         let mut futs = Vec::with_capacity(listing.tags.len());
         for i in listing.tags.iter() {
             futs.push(async {
                 self.client
-                    .select::<Option<DatabaseEntityListing>>(create_thing_from_id(
-                        Collection::Tag,
-                        i,
-                    ))
+                    .select::<Option<DatabaseEntityTag>>(create_thing_from_id(Collection::Tag, i))
                     .await
                     .map_err(map_db_error)
             });
         }
 
-        let user_ok = futures_util::future::try_join_all([user, category]).await;
+        let tags_exist = futures_util::future::try_join_all(futs)
+            .instrument(tracing::info_span!("verifying tags"))
+            .await?;
 
-        let tags_exist = futures_util::future::try_join_all(futs).await?;
         if tags_exist.iter().any(|f| f.is_none()) {
             return Err(CoreError::Database(String::from(
                 "One or more of your tags does not exist",
+            )));
+        }
+
+        if !category_ok {
+            return Err(CoreError::Database(format!(
+                "category: {} does not exist",
+                listing.category_id
+            )));
+        }
+
+        if !user_ok {
+            return Err(CoreError::Database(format!(
+                "user: {} does not exist",
+                listing.user_id
             )));
         }
 
@@ -108,6 +114,7 @@ struct InputListing<'a> {
     other_images: &'a [String],
     active: bool,
     tags: Vec<RecordId>,
+    likes: Vec<RecordId>,
     location: &'a str,
     created_at: &'a OffsetDateTime,
     updated_at: Option<&'a OffsetDateTime>,
@@ -132,6 +139,7 @@ impl<'a> From<&'a Listing> for InputListing<'a> {
             category_id: record("category", &value.category_id),
             other_images: &value.other_images,
             active: value.active,
+            likes: vec![],
             location: &value.location,
             created_at: &value.created_at,
             deleted_at: value.deleted_at.as_ref(),

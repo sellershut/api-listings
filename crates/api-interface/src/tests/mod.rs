@@ -5,7 +5,7 @@ use async_graphql::{
     Request, ServerResult,
 };
 
-use crate::{ApiSchemaBuilder, DatabaseCredentials};
+use crate::{ApiSchemaBuilder, Apis, DatabaseCredentials};
 use async_trait::async_trait;
 
 mod mutation;
@@ -48,6 +48,10 @@ async fn init_schema() -> async_graphql::Schema<
     let db_namespace = std::env::var("TEST_DATABASE_NAMESPACE").expect("TEST_DATABASE_NAMESPACE");
     let db_name = std::env::var("TEST_DATABASE_NAME").expect("TEST_DATABASE_NAME");
 
+    let api_users = std::env::var("TEST_SELLERSHUT_API_USERS").expect("TEST_SELLERSHUT_API_USERS");
+    let api_categories =
+        std::env::var("TEST_SELLERSHUT_API_CATEGORIES").expect("TEST_SELLERSHUT_API_CATEGORIES");
+
     let database_credentials = DatabaseCredentials {
         db_dsn: &db_host,
         db_user: &username,
@@ -56,7 +60,12 @@ async fn init_schema() -> async_graphql::Schema<
         db: &db_name,
     };
 
-    ApiSchemaBuilder::new(database_credentials, None, None)
+    let apis = Apis {
+        users: &api_users,
+        categories: &api_categories,
+    };
+
+    ApiSchemaBuilder::new(database_credentials, None, None, apis)
         .await
         .expect("schema created successfully")
         .with_extension(DummyExtension)

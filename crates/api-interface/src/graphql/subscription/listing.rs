@@ -38,7 +38,7 @@ impl ListingChanged {
 
     async fn listing(&self, ctx: &Context<'_>) -> async_graphql::Result<Option<Listing>> {
         let database = extract_db(ctx)?;
-        let listing = database.get_listing_by_id(self.id).await?;
+        let listing = database.get_listing_by_id(&self.id).await?;
 
         Ok(listing)
     }

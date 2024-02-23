@@ -1,4 +1,4 @@
-query categoryById($id: UUID) {
+query categoryById($id: UUID!) {
   categoryById(id: $id) {
     id
   }

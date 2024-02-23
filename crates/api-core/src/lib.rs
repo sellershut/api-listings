@@ -29,9 +29,18 @@ pub struct Listing {
     pub location: String,
     #[cfg_attr(feature = "async-graphql", graphql(skip_input))]
     pub likes: Vec<Uuid>,
+    #[cfg_attr(
+        feature = "async-graphql",
+        graphql(default_with = "default_date_time()")
+    )]
     pub created_at: OffsetDateTime,
     pub updated_at: Option<OffsetDateTime>,
     pub deleted_at: Option<OffsetDateTime>,
+}
+
+#[cfg(feature = "async-graphql")]
+fn default_date_time() -> OffsetDateTime {
+    OffsetDateTime::now_utc()
 }
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
@@ -40,8 +49,8 @@ pub struct Listing {
 #[cfg_attr(feature = "async-graphql", graphql(input_name = "TagInput"))]
 pub struct Tag {
     #[cfg_attr(feature = "async-graphql", graphql(skip_input))]
-    id: Uuid,
-    name: String,
+    pub id: Uuid,
+    pub name: String,
 }
 
 pub mod reexports {
