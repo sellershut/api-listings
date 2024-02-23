@@ -66,6 +66,18 @@
         "patch",
         "minor"
       ]
+    },
+    {
+      "groupName": "futures",
+      "automerge": true,
+      "matchPackagePatterns": [
+        "futures"
+      ],
+      "matchCurrentVersion": "!/^0/",
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ]
     }
   ]
 }
