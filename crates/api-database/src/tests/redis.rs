@@ -61,6 +61,7 @@ async fn redis_list_check() -> Result<()> {
     let pool = client().await;
     let mut pool = pool.get().await.unwrap();
     let key = "HJIUN";
+    let _ = pool.del::<&str, ()>(key).await;
 
     let res = pool.lpop::<&str, ()>(key, None).await;
     dbg!(&res);
@@ -78,6 +79,7 @@ async fn redis_list_check() -> Result<()> {
     let res = pool.rpush::<&str, _, ()>(key, &[1, 2, 4]).await;
     assert!(res.is_err()); //key does not hold a list
 
+    let _ = pool.del::<&str, ()>(key).await;
     Ok(())
 }
 
@@ -107,5 +109,6 @@ async fn redis_sets_check() -> Result<()> {
     dbg!(&res);
     assert!(res.is_ok());
 
+    let _ = pool.del::<&str, ()>(key).await;
     Ok(())
 }

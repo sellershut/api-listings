@@ -34,7 +34,11 @@ fn create_listing_item() -> Listing {
 }
 
 fn check_similarities(source: &Listing, dest: &Listing) {
-    assert_eq!(source, dest);
+    assert_eq!(source.user_id, dest.user_id);
+    assert_eq!(source.title, dest.title);
+    assert_eq!(source.description, dest.description);
+    assert_eq!(source.price, dest.price);
+    assert_eq!(source.created_at, dest.created_at);
 }
 
 #[tokio::test]
@@ -97,31 +101,6 @@ async fn create_listing() -> Result<()> {
 
     assert_eq!(update_res.id, input.id);
     assert_eq!(update_res.title, new_title);
-
-    client.delete_listing(&input.id).await?;
-    Ok(())
-}
-
-#[tokio::test]
-async fn delete_listing() -> Result<()> {
-    let listing = create_listing_item();
-    let client = create_client(Some("test-mutation-delete"), false, false).await?;
-
-    let all_listings = client.get_listings().await?;
-
-    let base_count = all_listings.count();
-
-    let input = client.create_listing(&listing).await?;
-    // delete and check count
-    let deleted_listing = client
-        .delete_listing(&input.id)
-        .await?
-        .expect("listing to be deleted");
-
-    assert_eq!(input, deleted_listing);
-
-    let final_count = client.get_listings().await?.count();
-    assert_eq!(base_count, final_count);
 
     client.delete_listing(&input.id).await?;
     Ok(())

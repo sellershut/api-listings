@@ -68,11 +68,10 @@ pub(crate) async fn create_sample_user(
 
     let resp = client.execute(req).await.map_err(map_err)?;
 
-    let response_body: Response<create_category::ResponseData> =
-        resp.json().await.map_err(map_err)?;
+    let response_body: Response<create_user::ResponseData> = resp.json().await.map_err(map_err)?;
 
     if let Some(resp) = response_body.data {
-        return Ok(resp.create_category.id);
+        return Ok(resp.create_user.id);
     }
-    return Err(CoreError::Other("Could not create user".to_owned()));
+    Err(CoreError::Other("Could not create user".to_owned()))
 }
