@@ -10,8 +10,8 @@ impl Root {
         Listing::default()
     }
 
-    async fn input(&self, category: Listing) -> Listing {
-        category
+    async fn input(&self, listing: Listing) -> Listing {
+        listing
     }
 }
 
@@ -24,7 +24,7 @@ async fn gql_query() {
             r#"
               query {
                 output {
-                  name
+                  title
                 }
               }
             "#,
@@ -44,8 +44,17 @@ async fn gql_mutation() {
         .execute(
             r#"
               mutation {
-                input (category: {name: "Lorem"}) {
-                  name
+                input (listing: {
+                    userId: "7c503531-2900-4fb3-b4ac-203f7bb6ac2f",
+                    categoryId: "7c503531-2910-4fb3-b4ac-203f7bb6ac2f",
+                    title: "Title",
+                    description: "Desc",
+                    price: 34.3,
+                    imageUrl: "url",
+                    active: true,
+                    location: "",
+                }) {
+                  id
                 }
               }
             "#,

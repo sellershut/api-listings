@@ -19,6 +19,8 @@ env:
   TEST_DATABASE_NAMESPACE: ci-tests
   TEST_REDIS_HOST: redis://localhost:6379
   MEILISEARCH_HOST: http://localhost:7700
+  TEST_SELLERSHUT_API_USERS: http://localhost:3001
+  TEST_SELLERSHUT_API_CATEGORIES: http://localhost:3000
   MEILISEARCH_API_KEY:
 
 jobs:
@@ -45,6 +47,24 @@ jobs:
           --health-retries 5
         ports:
           - 7700:7700
+      api-categories:
+        image: ghcr.io/sellershut/api-categories:master
+        options: >-
+          --health-cmd "curl -f 'http://localhost:3000'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 3000:3000
+      api-users:
+        image: ghcr.io/sellershut/api-users:master
+        options: >-
+          --health-cmd "curl -f 'http://localhost:3001'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 3001:3000
     name: ubuntu / ${{ matrix.toolchain }}
     strategy:
       matrix:
