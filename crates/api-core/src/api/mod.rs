@@ -44,7 +44,11 @@ pub trait LocalMutateListings {
 #[trait_variant::make(QueryTags: Send)]
 pub trait LocalQueryTags {
     async fn get_tags(&self) -> Result<impl ExactSizeIterator<Item = Tag>, CoreError>;
-    async fn get_tag_by_id(&self, id: &Uuid) -> Result<Tag, CoreError>;
+    async fn get_tag_by_id(&self, id: &Uuid) -> Result<Option<Tag>, CoreError>;
+    async fn search(
+        &self,
+        query: impl AsRef<str> + Send + Debug,
+    ) -> Result<impl ExactSizeIterator<Item = Tag>, CoreError>;
 }
 
 #[trait_variant::make(MutateTags: Send)]

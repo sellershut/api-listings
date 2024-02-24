@@ -1,3 +1,5 @@
+mod tags;
+
 use api_core::{
     api::{CoreError, QueryListings},
     reexports::uuid::Uuid,

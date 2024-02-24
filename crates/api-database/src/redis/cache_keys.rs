@@ -6,8 +6,10 @@ use redis::ToRedisArgs;
 #[derive(Clone, Copy)]
 pub enum CacheKey<'a> {
     AllListings,
+    AllTags,
     UserListing { user_id: &'a Uuid },
     Listing { id: &'a Uuid },
+    Tag { id: &'a Uuid },
 }
 
 impl Display for CacheKey<'_> {
@@ -19,6 +21,12 @@ impl Display for CacheKey<'_> {
                 CacheKey::AllListings => "all".to_string(),
                 CacheKey::UserListing { user_id } => format!("from_user={user_id}"),
                 CacheKey::Listing { id } => format!("id={id}"),
+                CacheKey::AllTags => {
+                    "all_tags".to_string()
+                }
+                CacheKey::Tag { id } => {
+                    format!("tag={id}")
+                }
             }
         )
     }
