@@ -47,29 +47,23 @@ jobs:
           --health-retries 5
         ports:
           - 7700:7700
-      api-categories:
-        image: ghcr.io/sellershut/api-categories:master
-        options: >-
-          --health-cmd "curl -f 'http://localhost:3000'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 3000:3000
-      api-users:
-        image: ghcr.io/sellershut/api-users:master
-        options: >-
-          --health-cmd "curl -f 'http://localhost:3001'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 3001:3000
     name: ubuntu / ${{ matrix.toolchain }}
     strategy:
       matrix:
         toolchain: [stable, beta]
     steps:
+      - name: Login to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: run api-users
+        run: |
+          docker run ghcr.io/sellershut/api-users:master
+      - name: run api-categories
+        run: |
+          docker run ghcr.io/sellershut/api-categories:master
       - name: install surreal
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh
@@ -131,6 +125,18 @@ jobs:
         ports:
           - 7700:7700
     steps:
+      - name: Login to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: run api-users
+        run: |
+          docker run ghcr.io/sellershut/api-users:master
+      - name: run api-categories
+        run: |
+          docker run ghcr.io/sellershut/api-categories:master
       - name: install surreal
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh
