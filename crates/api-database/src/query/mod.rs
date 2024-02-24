@@ -339,3 +339,19 @@ impl QueryListings for Client {
         Ok(result.into_iter())
     }
 }
+/*
+impl Client {
+    pub async fn live_listing(&self) {
+        let val: surrealdb::method::Stream<
+            '_,
+            surrealdb::engine::remote::ws::Client,
+            Vec<DatabaseEntityListing>,
+        > = self
+            .client
+            .select(Collection::Listing)
+            .live()
+            .await
+            .unwrap();
+        let res = val.map(|item| item.map(|item| Listing::try_from(item.data)));
+    }
+} */
