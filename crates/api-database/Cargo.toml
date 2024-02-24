@@ -33,8 +33,3 @@ criterion = { workspace = true, features = ["async_tokio"] }
 dotenvy.workspace = true
 fake.workspace = true
 tokio = { workspace = true, features = ["macros"] }
-
-[[bench]]
-name = "database-insert"
-harness = false
-path = "../../benches/listing-insert-db.rs"

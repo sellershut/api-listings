@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 fn bench(c: &mut Criterion) {
     let count = 24;
-    let mut categories = Vec::with_capacity(count);
+    let mut listings = Vec::with_capacity(count);
 
     for _ in 0..count {
         let words: Vec<String> = Words(1..5).fake();
@@ -14,7 +14,7 @@ fn bench(c: &mut Criterion) {
 
         let tags: Vec<_> = [0; 4].iter().map(|_| Uuid::now_v7()).collect();
 
-        let category = Listing {
+        let listing = Listing {
             id: Uuid::now_v7(),
             image_url: String::default(),
             user_id: Uuid::now_v7(),
@@ -26,20 +26,20 @@ fn bench(c: &mut Criterion) {
             active: false,
             tags,
             location: String::default(),
-            likes: vec![],
+            liked_by: vec![],
             created_at: OffsetDateTime::now_utc(),
             updated_at: None,
             deleted_at: None,
         };
 
-        categories.push(category);
+        listings.push(listing);
     }
 
     c.bench_function(&format!("serialise {count}"), |b| {
-        b.iter(|| black_box(serde_json::to_string(&categories)))
+        b.iter(|| black_box(serde_json::to_string(&listings)))
     });
 
-    let cat_str = serde_json::to_string(&categories).unwrap();
+    let cat_str = serde_json::to_string(&listings).unwrap();
 
     c.bench_function(&format!("deserialise {count}"), |b| {
         b.iter(|| black_box(serde_json::from_str::<Vec<Listing>>(&cat_str)))

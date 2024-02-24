@@ -22,7 +22,7 @@ pub struct categoryById;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "src/graphql_externals/users-schema.json",
-    query_path = "src/graphql_externals/user_query.graphql",
+    query_path = "src/graphql_externals/users_query.graphql",
     response_derives = "Debug"
 )]
 #[allow(non_camel_case_types)]

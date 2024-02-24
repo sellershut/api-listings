@@ -290,7 +290,7 @@ impl QueryListings for Client {
                             active: hit.result.active,
                             tags: hit.result.tags,
                             location: hit.result.location,
-                            likes: hit.result.likes,
+                            liked_by: hit.result.liked_by,
                             created_at: hit.result.created_at,
                             updated_at: hit.result.updated_at,
                             deleted_at: hit.result.deleted_at,

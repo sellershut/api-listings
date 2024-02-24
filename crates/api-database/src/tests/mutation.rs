@@ -1,131 +1,128 @@
+use crate::tests::external_mutation::{
+    create_category::Variables,
+    create_sample_category, create_sample_user,
+    create_user::{self, UserType},
+};
+
 use super::create_client;
 use anyhow::Result;
 use api_core::{
-    api::{MutateCategories, QueryCategories},
+    api::{MutateListings, QueryListings},
     reexports::uuid::Uuid,
     Listing,
 };
+use time::OffsetDateTime;
 
-fn create_category_item() -> Listing {
+fn create_listing_item() -> Listing {
     Listing {
         id: Uuid::now_v7(),
-        name: "TestCategoryInput".into(),
-        sub_categories: None,
-        image_url: None,
-        parent_id: None,
+        user_id: Uuid::now_v7(),
+        title: "Test Listing".to_owned(),
+        description: "Test description".to_owned(),
+        price: 25.4,
+        category_id: Uuid::now_v7(),
+        image_url: "http://testpicture.com".to_owned(),
+        other_images: vec![],
+        active: true,
+        tags: vec![],
+        location: String::default(),
+        liked_by: vec![],
+        created_at: OffsetDateTime::now_utc(),
+        updated_at: None,
+        deleted_at: None,
     }
 }
 
 fn check_similarities(source: &Listing, dest: &Listing) {
-    assert_eq!(source.name, dest.name);
-    assert_eq!(source.sub_categories, dest.sub_categories);
-    assert_eq!(source.parent_id, dest.parent_id);
+    assert_eq!(source, dest);
 }
 
 #[tokio::test]
-async fn create_category() -> Result<()> {
+async fn create_listing() -> Result<()> {
     let client = create_client(Some("test-mutation-create"), false, false).await?;
+    let mut listing = create_listing_item();
+    let res = client.create_listing(&listing).await;
 
-    let all_categories = client.get_categories().await?;
+    let all_listings = client.get_listings().await?;
 
-    let base_count = all_categories.count();
-    let category = create_category_item();
+    let base_count = all_listings.count();
 
-    let input = client.create_category(&category).await?;
+    assert!(res.is_err()); // no category
 
-    let updated_categories = client.get_categories().await?;
+    let uuid = create_sample_category(
+        &client.http_client,
+        Variables {
+            name: "TestCategory".to_owned(),
+        },
+    )
+    .await
+    .expect("Category to be created via post request");
 
-    assert_eq!(base_count + 1, updated_categories.count());
-    check_similarities(&input, &category);
+    listing.category_id = uuid;
 
-    client.delete_category(&input.id).await?;
-    Ok(())
-}
+    let res = client.create_listing(&listing).await;
 
-#[tokio::test]
-async fn create_get_by_id() -> Result<()> {
-    let category = create_category_item();
+    assert!(res.is_err()); // no user
+    let uuid = create_sample_user(
+        &client.http_client,
+        create_user::Variables {
+            username: "TestCategory".to_owned(),
+            user_type: Some(UserType::INDIVIDUAL),
+        },
+    )
+    .await
+    .expect("User to be created via post request");
 
-    let client = create_client(Some("test-mutation-update"), false, false).await?;
+    listing.user_id = uuid;
 
-    let input = client.create_category(&category).await?;
-    let id = input.id;
+    let input = client.create_listing(&listing).await?;
 
-    let get_by_id = client.get_category_by_id(&input.id).await?;
-    assert_eq!(get_by_id, Some(input));
+    let updated_listings = client.get_listings().await?;
 
-    client.delete_category(&id).await?;
+    assert_eq!(base_count + 1, updated_listings.count());
+    check_similarities(&input, &listing);
 
-    Ok(())
-}
-
-/* #[tokio::test]
-async fn update_no_id() -> Result<()> {
-    let mut update = create_category_item();
-
-    let client = create_client(Some("test-mutation-bad-id")).await?;
-
-    update.name = "FooBar".to_string();
-    update.id = Id::default();
-    update.is_root = false;
-
-    // Empty IDs return errors
-    let update_res = client
-        .update_category(&update.id.to_string(), &update)
-        .await;
-
-    assert!(update_res.is_err());
-
-    Ok(())
-} */
-
-#[tokio::test]
-async fn update_category() -> Result<()> {
-    let category = create_category_item();
-
-    let client = create_client(Some("test-mutation-update"), false, false).await?;
-
-    let input = client.create_category(&category).await?;
+    let get_by_id = client.get_listing_by_id(&input.id).await?;
+    assert_eq!(get_by_id, Some(input.clone()));
 
     let mut update = input.clone();
-    update.name = "FooBar".to_string();
-    update.parent_id = None;
+    let new_title = "FooBar".to_string();
+    update.title = new_title.clone();
 
     // This ID does exist
     let update_res = client
-        .update_category(&input.id, &update)
+        .update_listing(&input.id, &update)
         .await?
-        .expect("category to exist in db");
+        .expect("listing to exist in db");
 
-    assert_eq!(&update_res.id, &input.id);
-    check_similarities(&update, &update_res);
+    assert_eq!(update_res.id, input.id);
+    assert_eq!(update_res.title, new_title);
 
-    client.delete_category(&input.id).await?;
-
+    client.delete_listing(&input.id).await?;
     Ok(())
 }
 
 #[tokio::test]
-async fn delete_category() -> Result<()> {
-    let category = create_category_item();
+async fn delete_listing() -> Result<()> {
+    let listing = create_listing_item();
     let client = create_client(Some("test-mutation-delete"), false, false).await?;
 
-    let all_categories = client.get_categories().await?;
+    let all_listings = client.get_listings().await?;
 
-    let base_count = all_categories.count();
+    let base_count = all_listings.count();
 
-    let input = client.create_category(&category).await?;
+    let input = client.create_listing(&listing).await?;
     // delete and check count
-    let deleted_category = client
-        .delete_category(&input.id)
+    let deleted_listing = client
+        .delete_listing(&input.id)
         .await?
-        .expect("category to be deleted");
+        .expect("listing to be deleted");
 
-    assert_eq!(input, deleted_category);
+    assert_eq!(input, deleted_listing);
 
-    let final_count = client.get_categories().await?.count();
+    let final_count = client.get_listings().await?.count();
     assert_eq!(base_count, final_count);
 
-    client.delete_category(&input.id).await?;
+    client.delete_listing(&input.id).await?;
     Ok(())
 }

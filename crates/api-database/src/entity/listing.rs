@@ -59,7 +59,7 @@ impl TryFrom<DatabaseEntityListing> for Listing {
             other_images: entity.other_images,
             active: entity.active,
             location: entity.location,
-            likes,
+            liked_by: likes,
             created_at: entity.created_at,
             deleted_at: entity.deleted_at,
             tags,

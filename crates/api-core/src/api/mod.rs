@@ -35,7 +35,7 @@ pub trait LocalQueryListings {
 
 #[trait_variant::make(MutateListings: Send)]
 pub trait LocalMutateListings {
-    async fn create_listing(&self, category: &Listing) -> Result<Listing, CoreError>;
+    async fn create_listing(&self, listing: &Listing) -> Result<Listing, CoreError>;
     async fn update_listing(&self, id: &Uuid, data: &Listing)
         -> Result<Option<Listing>, CoreError>;
     async fn delete_listing(&self, id: &Uuid) -> Result<Option<Listing>, CoreError>;
@@ -49,7 +49,7 @@ pub trait LocalQueryTags {
 
 #[trait_variant::make(MutateTags: Send)]
 pub trait LocalMutateTag {
-    async fn create_tag(&self, category: &Tag) -> Result<Tag, CoreError>;
+    async fn create_tag(&self, tag: &Tag) -> Result<Tag, CoreError>;
     async fn update_tag(&self, id: &Uuid, data: &Tag) -> Result<Option<Tag>, CoreError>;
     async fn delete_tag(&self, id: &Uuid) -> Result<Option<Tag>, CoreError>;
 }

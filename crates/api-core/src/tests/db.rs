@@ -47,6 +47,13 @@ impl LocalQueryListings for SampleDb {
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
         Ok([].into_iter())
     }
+
+    async fn get_listings_with_tags(
+        &self,
+        _tags: &[&Uuid],
+    ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
+        Ok([].into_iter())
+    }
 }
 
 impl LocalMutateListings for SampleDb {
@@ -86,6 +93,13 @@ impl MutateListings for SampleDbSend {
 }
 
 impl QueryListings for SampleDbSend {
+    async fn get_listings_with_tags(
+        &self,
+        _tags: &[&Uuid],
+    ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
+        Ok([].into_iter())
+    }
+
     async fn get_listings(&self) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
         Ok([].into_iter())
     }

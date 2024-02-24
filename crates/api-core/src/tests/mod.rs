@@ -21,7 +21,7 @@ impl Default for Listing {
             active: true,
             tags: vec![],
             location: String::default(),
-            likes: vec![],
+            liked_by: vec![],
             created_at: OffsetDateTime::now_utc(),
             deleted_at: None,
             updated_at: None,

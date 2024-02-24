@@ -28,7 +28,7 @@ pub struct Listing {
     pub tags: Vec<Uuid>,
     pub location: String,
     #[cfg_attr(feature = "async-graphql", graphql(skip_input))]
-    pub likes: Vec<Uuid>,
+    pub liked_by: Vec<Uuid>,
     #[cfg_attr(
         feature = "async-graphql",
         graphql(default_with = "default_date_time()")
