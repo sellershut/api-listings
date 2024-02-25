@@ -285,6 +285,7 @@ impl QueryListings for Client {
                             user_id: hit.result.user_id,
                             title: hit.result.title,
                             description: hit.result.description,
+                            negotiable: hit.result.negotiable,
                             price: hit.result.price,
                             category_id: hit.result.category_id,
                             image_url: hit.result.image_url,

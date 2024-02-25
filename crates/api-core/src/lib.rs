@@ -25,6 +25,8 @@ pub struct Listing {
     pub other_images: Vec<String>,
     pub active: bool,
     #[cfg_attr(feature = "async-graphql", graphql(default))]
+    pub negotiable: bool,
+    #[cfg_attr(feature = "async-graphql", graphql(default))]
     pub tags: Vec<Uuid>,
     pub location: String,
     #[cfg_attr(feature = "async-graphql", graphql(skip_input))]
