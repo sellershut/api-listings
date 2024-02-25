@@ -22,6 +22,7 @@ env:
   TEST_SELLERSHUT_API_USERS: http://localhost:3001
   TEST_SELLERSHUT_API_CATEGORIES: http://localhost:3000
   MEILISEARCH_API_KEY:
+  REGISTRY: ghcr.io
 
 jobs:
   required:
@@ -55,7 +56,7 @@ jobs:
       - name: Login to ghcr.io
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: run api-users
@@ -128,7 +129,7 @@ jobs:
       - name: Login to ghcr.io
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: run api-users
