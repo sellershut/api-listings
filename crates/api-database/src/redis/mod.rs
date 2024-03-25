@@ -273,8 +273,7 @@ async fn new_redis_pool_helper(
         let pool = ClusteredRedisPool { pool };
         RedisPool::Clustered(pool)
     } else {
-        let mgr = RedisConnectionManager::new(redis_dsn)
-            .expect("Error intializing redis client");
+        let mgr = RedisConnectionManager::new(redis_dsn).expect("Error intializing redis client");
         let pool = bb8::Pool::builder()
             .max_size(max_connections.into())
             .build(mgr)
