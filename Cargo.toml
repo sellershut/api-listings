@@ -28,7 +28,7 @@ thiserror = "1.0.58"
 time = "0.3.34"
 tokio = "1.36.0"
 tracing = "0.1.40"
-tracing-opentelemetry = "0.22.0"
+tracing-opentelemetry = "0.23.0"
 trait-variant = "0.1.2"
 uuid = "1.7.0"
 
