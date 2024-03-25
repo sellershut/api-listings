@@ -8,20 +8,6 @@
   "packageRules": [
     {
       "matchPackagePatterns": [
-        "opentelemetry"
-      ],
-      "groupName": "opentelemetry"
-    },
-    {
-      "matchPackagePatterns": [
-        "anyhow",
-        "thiserror"
-      ],
-      "automerge": true,
-      "groupName": "error-handling"
-    },
-    {
-      "matchPackagePatterns": [
         "async-graphql"
       ],
       "groupName": "async-graphql",
@@ -31,6 +17,14 @@
         "patch",
         "minor"
       ]
+    },
+    {
+      "matchPackagePatterns": [
+        "anyhow",
+        "thiserror"
+      ],
+      "automerge": true,
+      "groupName": "error-handling"
     },
     {
       "groupName": "tracing",
