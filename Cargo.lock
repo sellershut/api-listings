@@ -148,7 +148,7 @@ dependencies = [
  "futures-util",
  "graphql_client",
  "meilisearch-sdk",
- "opentelemetry",
+ "opentelemetry 0.21.0",
  "opentelemetry-http",
  "redis",
  "reqwest",
@@ -181,7 +181,7 @@ dependencies = [
  "futures-timer",
  "futures-util",
  "once_cell",
- "opentelemetry",
+ "opentelemetry 0.21.0",
  "slab",
  "thiserror",
  "tokio",
@@ -201,7 +201,7 @@ dependencies = [
  "dotenvy",
  "metrics",
  "metrics-exporter-prometheus",
- "opentelemetry",
+ "opentelemetry 0.21.0",
  "opentelemetry-otlp",
  "opentelemetry-semantic-conventions",
  "opentelemetry_sdk",
@@ -2597,15 +2597,30 @@ dependencies = [
 ]
 
 [[package]]
-name = "opentelemetry-http"
-version = "0.10.0"
+name = "opentelemetry"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f51189ce8be654f9b5f7e70e49967ed894e84a06fc35c6c042e64ac1fc5399e"
+checksum = "900d57987be3f2aeb70d385fff9b27fb74c5723cc9a52d904d4f9c807a0667bf"
+dependencies = [
+ "futures-core",
+ "futures-sink",
+ "js-sys",
+ "once_cell",
+ "pin-project-lite",
+ "thiserror",
+ "urlencoding",
+]
+
+[[package]]
+name = "opentelemetry-http"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7cbfa5308166ca861434f0b0913569579b8e587430a3d6bcd7fd671921ec145a"
 dependencies = [
  "async-trait",
  "bytes",
  "http 0.2.11",
- "opentelemetry",
+ "opentelemetry 0.22.0",
 ]
 
 [[package]]
@@ -2617,7 +2632,7 @@ dependencies = [
  "async-trait",
  "futures-core",
  "http 0.2.11",
- "opentelemetry",
+ "opentelemetry 0.21.0",
  "opentelemetry-proto",
  "opentelemetry-semantic-conventions",
  "opentelemetry_sdk",
@@ -2633,7 +2648,7 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2e155ce5cc812ea3d1dffbd1539aed653de4bf4882d60e6e04dcf0901d674e1"
 dependencies = [
- "opentelemetry",
+ "opentelemetry 0.21.0",
  "opentelemetry_sdk",
  "prost",
  "tonic",
@@ -2645,7 +2660,7 @@ version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f5774f1ef1f982ef2a447f6ee04ec383981a3ab99c8e77a1a7b30182e65bbc84"
 dependencies = [
- "opentelemetry",
+ "opentelemetry 0.21.0",
 ]
 
 [[package]]
@@ -2661,7 +2676,7 @@ dependencies = [
  "futures-util",
  "glob",
  "once_cell",
- "opentelemetry",
+ "opentelemetry 0.21.0",
  "ordered-float",
  "percent-encoding",
  "rand",
@@ -4649,7 +4664,7 @@ checksum = "c67ac25c5407e7b961fafc6f7e9aa5958fd297aada2d20fa2ae1737357e55596"
 dependencies = [
  "js-sys",
  "once_cell",
- "opentelemetry",
+ "opentelemetry 0.21.0",
  "opentelemetry_sdk",
  "smallvec",
  "tracing",
