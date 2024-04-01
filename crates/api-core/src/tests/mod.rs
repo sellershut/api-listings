@@ -20,7 +20,7 @@ impl Default for Listing {
             other_images: vec![],
             active: true,
             tags: vec![],
-            location: String::default(),
+            location_id: String::default(),
             liked_by: vec![],
             created_at: OffsetDateTime::now_utc(),
             deleted_at: None,

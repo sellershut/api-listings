@@ -25,7 +25,7 @@ fn create_listing_item() -> Listing {
         other_images: vec![],
         active: true,
         tags: vec![],
-        location: String::default(),
+        location_id: String::default(),
         liked_by: vec![],
         created_at: OffsetDateTime::now_utc(),
         updated_at: None,

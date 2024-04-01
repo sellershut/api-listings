@@ -1,4 +1,4 @@
-use api_core::{api::CoreError, reexports::uuid::Uuid, Listing};
+use api_core::{api::CoreError, reexports::uuid::Uuid, Listing, ListingCondition};
 use serde::{Deserialize, Serialize};
 use surrealdb::opt::RecordId;
 use time::OffsetDateTime;
@@ -18,7 +18,10 @@ pub(crate) struct DatabaseEntityListing {
     pub active: bool,
     pub negotiable: bool,
     pub tags: Vec<RecordId>,
-    pub location: String,
+    pub location_id: RecordId,
+    pub condition: ListingCondition,
+    pub expires_at: Option<OffsetDateTime>,
+    pub quantity: u32,
     pub likes: Vec<RecordId>,
     pub created_at: OffsetDateTime,
     pub updated_at: Option<OffsetDateTime>,
@@ -37,6 +40,9 @@ impl TryFrom<DatabaseEntityListing> for Listing {
 
         let category_id_fk = create_string_from_id(&entity.category_id);
         let category_id = Uuid::parse_str(&category_id_fk)?;
+
+        let location_id_fk = create_string_from_id(&entity.location_id);
+        let location_id = Uuid::parse_str(&location_id_fk)?;
 
         let tags = entity
             .tags
@@ -60,10 +66,13 @@ impl TryFrom<DatabaseEntityListing> for Listing {
             other_images: entity.other_images,
             active: entity.active,
             negotiable: entity.negotiable,
-            location: entity.location,
+            location_id,
             liked_by: likes,
             created_at: entity.created_at,
             deleted_at: entity.deleted_at,
+            condition: entity.condition,
+            quantity: entity.quantity,
+            expires_at: entity.expires_at,
             tags,
             image_url: entity.image_url,
             updated_at: entity.updated_at,
