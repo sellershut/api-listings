@@ -9,9 +9,10 @@ use api_core::{
     reexports::uuid::Uuid,
     Listing,
 };
+use futures_util::TryFutureExt;
 use surrealdb::opt::RecordId;
 use time::OffsetDateTime;
-use tracing::{debug, error, instrument, Instrument};
+use tracing::{debug, error, instrument, trace, Instrument};
 
 use crate::{map_db_error, Client};
 
@@ -181,12 +182,21 @@ impl MutateListings for Client {
         let bucket = &self.storage_bucket;
 
         let futs = files.iter().map(|value| {
-            let id = format!("/{}", Uuid::now_v7());
-            bucket.put_object(id, value)
+            let uid = Uuid::now_v7();
+            let id = format!("/{}", uid);
+            bucket
+                .put_object(id.to_owned(), value)
+                .and_then(move |resp| async move {
+                    if let Ok(s) = resp.as_str() {
+                        trace!("{s}");
+                    }
+                    Ok((uid.to_string(), uid.to_string()))
+                })
         });
 
-        futures_util::future::join_all(futs).await;
-        todo!()
+        futures_util::future::try_join_all(futs)
+            .await
+            .map_err(|e| CoreError::Other(e.to_string()))
     }
 }
 

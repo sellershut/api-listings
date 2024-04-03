@@ -1,7 +1,7 @@
 use s3::creds::Credentials;
 use s3::{Bucket, BucketConfiguration, Region};
 use surrealdb::sql::Uuid;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 use crate::ClientError;
 
@@ -15,6 +15,7 @@ pub struct S3Config {
 }
 
 pub async fn start(config: &S3Config) -> Result<Bucket, ClientError> {
+    // TODO: check minio-rs crate for v0.2.0
     let bucket_name = &config.bucket_name;
     let region = || Region::Custom {
         region: config.region.to_owned(),
