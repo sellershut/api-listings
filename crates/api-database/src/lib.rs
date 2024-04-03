@@ -1,14 +1,17 @@
 use std::sync::Arc;
 
 use api_core::api::CoreError;
+use s3::Bucket;
 use thiserror::Error;
 
 mod collections;
 pub(crate) mod entity;
+mod file_storage;
 mod graphql_requests;
 mod mutation;
 mod query;
 mod redis;
+pub use file_storage::S3Config;
 
 use surrealdb::{
     engine::remote::ws::{Client as SurrealClient, Ws},
@@ -30,6 +33,7 @@ pub struct Client {
     http_client: reqwest::Client,
     users_api: Arc<str>,
     categories_api: Arc<str>,
+    storage_bucket: Bucket,
 }
 
 impl Client {
@@ -46,6 +50,7 @@ impl Client {
         ))
     }
 
+    #[allow(clippy::too_many_arguments)]
     #[instrument(skip_all)]
     pub async fn try_new(
         dsn: &str,
@@ -55,7 +60,9 @@ impl Client {
         database: &str,
         users_api: &str,
         categories_api: &str,
+        s3_config: &S3Config,
     ) -> Result<Self, ClientError> {
+        let bucket = file_storage::start(s3_config).await?;
         trace!("connecting to database");
         let db = Surreal::new::<Ws>(dsn).await?;
 
@@ -73,6 +80,7 @@ impl Client {
             http_client,
             users_api: users_api.into(),
             categories_api: categories_api.into(),
+            storage_bucket: bucket,
         })
     }
 
@@ -89,6 +97,8 @@ pub enum ClientError {
     Engine(#[from] surrealdb::Error),
     #[error("the data for key `{0}` is not available")]
     Redaction(String),
+    #[error(transparent)]
+    Bucket(#[from] s3::error::S3Error),
     #[error("invalid header (expected {expected:?}, found {found:?})")]
     InvalidHeader { expected: String, found: String },
     #[error("unknown data store error")]

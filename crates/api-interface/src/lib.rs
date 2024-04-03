@@ -7,6 +7,8 @@ use self::graphql::{mutation::Mutation, query::Query, subscription::Subscription
 
 pub mod graphql;
 
+pub use api_database::S3Config;
+
 #[derive(Debug, Clone, Copy)]
 pub struct DatabaseCredentials<'a> {
     pub db_dsn: &'a str,
@@ -47,8 +49,10 @@ impl ApiSchemaBuilder {
         redis: Option<RedisConfig<'_>>,
         meilisearch: Option<(&str, Option<&str>)>,
         apis: Apis<'_>,
+        s3_config: &S3Config,
     ) -> Result<Self, SchemaError> {
         trace!("creating database client");
+
         let mut db_client = Client::try_new(
             database.db_dsn,
             database.db_user,
@@ -57,6 +61,7 @@ impl ApiSchemaBuilder {
             database.db,
             apis.users,
             apis.categories,
+            s3_config,
         )
         .await?;
 

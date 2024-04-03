@@ -1,7 +1,7 @@
 pub mod env;
 
 use anyhow::{Ok, Result};
-use api_interface::{Apis, DatabaseCredentials, RedisConfig};
+use api_interface::{Apis, DatabaseCredentials, RedisConfig, S3Config};
 use metrics_exporter_prometheus::PrometheusHandle;
 use tracing::{error, instrument, warn};
 
@@ -25,6 +25,7 @@ pub struct AppState {
     meilisearch_api_key: Option<String>,
     api_users: String,
     api_categories: String,
+    s3_config: S3Config,
 }
 
 impl AppState {
@@ -87,6 +88,10 @@ impl AppState {
 
         let metrics_handle = setup_metrics_recorder()?;
 
+        let bucket_name = env::extract_variable("S3_BUCKET_NAME", "sh-listings");
+        let bucket_region = env::extract_variable("S3_BUCKET_REGION", "eu-central-1");
+        let bucket_endpoint = env::extract_variable("S3_BUCKET_ENDPOINT", "http://localhost:19000");
+
         Ok(AppState {
             api_users,
             api_categories,
@@ -118,6 +123,13 @@ impl AppState {
                 error!(val = cache_ttl, default = 5000, "cache ttl invalid");
                 5000
             }),
+            s3_config: S3Config {
+                bucket_name,
+                region: bucket_region,
+                endpoint: bucket_endpoint,
+                access_key: std::env::var("S3_ACCESS_KEY").ok(),
+                secret_key: std::env::var("S3_SECRET_KEY").ok(),
+            },
         })
     }
 
@@ -149,5 +161,9 @@ impl AppState {
             pool_size: self.db_pool_size,
             ttl: self.cache_ttl,
         }
+    }
+
+    pub fn bucket_details(&self) -> &S3Config {
+        &self.s3_config
     }
 }

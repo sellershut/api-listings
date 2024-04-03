@@ -39,6 +39,7 @@ pub trait LocalMutateListings {
     async fn update_listing(&self, id: &Uuid, data: &Listing)
         -> Result<Option<Listing>, CoreError>;
     async fn delete_listing(&self, id: &Uuid) -> Result<Option<Listing>, CoreError>;
+    async fn upload_images(&self, files: &[&[u8]]) -> Result<Vec<(String, String)>, CoreError>;
 }
 
 #[trait_variant::make(QueryTags: Send)]

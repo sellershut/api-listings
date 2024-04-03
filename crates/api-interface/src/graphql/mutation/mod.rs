@@ -4,9 +4,14 @@ use async_graphql::Enum;
 
 pub(crate) mod listing;
 pub(crate) mod tag;
+pub(crate) mod upload;
 
 #[derive(async_graphql::MergedObject, Default)]
-pub struct Mutation(listing::ListingMutation, tag::TagMutation);
+pub struct Mutation(
+    listing::ListingMutation,
+    tag::TagMutation,
+    upload::UploadMutation,
+);
 
 #[derive(Enum, Eq, PartialEq, Copy, Clone, Debug)]
 pub(crate) enum MutationType {

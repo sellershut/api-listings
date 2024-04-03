@@ -56,6 +56,7 @@ async fn create_router(state: state::AppState) -> Result<Router> {
         Some(state.redis_credentials()),
         Some(state.meilisearch_credentials()),
         state.apis(),
+        state.bucket_details(),
     )
     .await?
     .with_extension(Tracing)

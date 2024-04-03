@@ -175,6 +175,19 @@ impl MutateListings for Client {
             None => Ok(None),
         }
     }
+
+    #[instrument(skip(self, files), err(Debug))]
+    async fn upload_images(&self, files: &[&[u8]]) -> Result<Vec<(String, String)>, CoreError> {
+        let bucket = &self.storage_bucket;
+
+        let futs = files.iter().map(|value| {
+            let id = format!("/{}", Uuid::now_v7());
+            bucket.put_object(id, value)
+        });
+
+        futures_util::future::join_all(futs).await;
+        todo!()
+    }
 }
 
 #[derive(serde::Serialize)]
