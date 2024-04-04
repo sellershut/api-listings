@@ -16,7 +16,7 @@ graphql_client = "0.14.0"
 meilisearch-sdk = { workspace = true, features = ["reqwest-rustls"] }
 opentelemetry.workspace = true
 opentelemetry-http.workspace = true
-redis = { version = "0.25.2", default-features = false, features = ["cluster-async", "tokio-comp"] }
+redis = { version = "0.25.3", default-features = false, features = ["cluster-async", "tokio-comp"] }
 reqwest = { version = "0.11.24", default-features = false, features = ["json", "rustls-tls"] }
 rust-s3 = { version = "0.33.0", default-features = false, features = ["fail-on-err", "tags", "tokio-rustls-tls"] }
 serde.workspace = true
