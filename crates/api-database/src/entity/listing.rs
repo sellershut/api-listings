@@ -22,7 +22,7 @@ pub(crate) struct DatabaseEntityListing {
     pub condition: ListingCondition,
     pub expires_at: Option<OffsetDateTime>,
     pub quantity: u32,
-    pub likes: Vec<RecordId>,
+    pub liked_by: Vec<RecordId>,
     pub created_at: OffsetDateTime,
     pub updated_at: Option<OffsetDateTime>,
     pub deleted_at: Option<OffsetDateTime>,
@@ -51,7 +51,7 @@ impl TryFrom<DatabaseEntityListing> for Listing {
             .collect::<Result<Vec<Uuid>, _>>()?;
 
         let likes = entity
-            .likes
+            .liked_by
             .iter()
             .map(|like| Uuid::parse_str(&create_string_from_id(like)))
             .collect::<Result<Vec<Uuid>, _>>()?;

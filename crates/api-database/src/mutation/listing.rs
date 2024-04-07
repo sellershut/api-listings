@@ -7,7 +7,7 @@ use crate::{
 use api_core::{
     api::{CoreError, MutateListings},
     reexports::uuid::Uuid,
-    Listing,
+    Listing, ListingCondition,
 };
 use futures_util::TryFutureExt;
 use surrealdb::opt::RecordId;
@@ -210,11 +210,15 @@ struct InputListing<'a> {
     image_url: &'a str,
     other_images: &'a [String],
     active: bool,
+    negotiable: bool,
     tags: Vec<RecordId>,
-    likes: Vec<RecordId>,
-    location: RecordId,
+    liked_by: Vec<RecordId>,
+    location_id: RecordId,
+    condition: ListingCondition,
+    quantity: u32,
     created_at: &'a OffsetDateTime,
     updated_at: Option<&'a OffsetDateTime>,
+    expires_at: Option<&'a OffsetDateTime>,
     deleted_at: Option<&'a OffsetDateTime>,
 }
 
@@ -236,11 +240,15 @@ impl<'a> From<&'a Listing> for InputListing<'a> {
             category_id: record("category", &value.category_id),
             other_images: &value.other_images,
             active: value.active,
-            likes: vec![],
-            location: record("region", &value.location_id),
+            negotiable: value.negotiable,
+            liked_by: vec![],
+            condition: value.condition,
+            quantity: value.quantity,
+            location_id: record("region", &value.location_id),
             created_at: &value.created_at,
             deleted_at: value.deleted_at.as_ref(),
             updated_at: value.updated_at.as_ref(),
+            expires_at: value.expires_at.as_ref(),
         }
     }
 }
