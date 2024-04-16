@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+
 use api_core::api::CoreError;
 use graphql_client::{GraphQLQuery, Response};
 use opentelemetry::global;
-use opentelemetry_http::HeaderInjector;
+use reqwest::header::HeaderMap;
 use tracing::{trace, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
@@ -28,6 +30,16 @@ pub struct categoryById;
 #[allow(non_camel_case_types)]
 pub struct userById;
 
+fn convert_headers(headers: &HeaderMap) -> HashMap<String, String> {
+    headers
+        .iter()
+        .map(|(key, value)| {
+            let val = value.to_str().unwrap();
+            (key.to_string(), val.to_string())
+        })
+        .collect()
+}
+
 #[tracing::instrument(skip(variables))]
 pub(crate) async fn find_category_by_id(
     client: &reqwest::Client,
@@ -39,14 +51,15 @@ pub(crate) async fn find_category_by_id(
 
     let map_err = |e: reqwest::Error| CoreError::Other(e.to_string());
 
-    let mut req = client
+    let req = client
         .post(categories_api)
         .json(&request_body)
         .build()
         .map_err(map_err)?;
 
     global::get_text_map_propagator(|propagator| {
-        propagator.inject_context(&context, &mut HeaderInjector(req.headers_mut()))
+        //propagator.inject_context(&context, &mut HeaderInjector(req.headers_mut()))
+        propagator.inject_context(&context, &mut convert_headers(req.headers()))
     });
 
     let resp = client.execute(req).await.map_err(map_err)?;
@@ -78,14 +91,14 @@ pub(crate) async fn find_user_by_id(
 
     let map_err = |e: reqwest::Error| CoreError::Other(e.to_string());
 
-    let mut req = client
+    let req = client
         .post(users_api)
         .json(&request_body)
         .build()
         .map_err(map_err)?;
 
     global::get_text_map_propagator(|propagator| {
-        propagator.inject_context(&context, &mut HeaderInjector(req.headers_mut()))
+        propagator.inject_context(&context, &mut convert_headers(req.headers()))
     });
 
     let resp = client.execute(req).await.map_err(map_err)?;
