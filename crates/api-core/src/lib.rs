@@ -15,24 +15,20 @@ use uuid::Uuid;
 pub struct Listing {
     #[cfg_attr(feature = "async-graphql", graphql(skip_input))]
     pub id: Uuid,
-    pub user_id: Uuid,
     pub title: String,
     pub description: String,
     pub price: f32,
     pub category_id: Uuid,
     pub image_url: String,
-    pub quantity: u32,
     pub condition: ListingCondition,
     #[cfg_attr(feature = "async-graphql", graphql(default))]
     pub other_images: Vec<String>,
-    pub active: bool,
+    pub published: bool,
     #[cfg_attr(feature = "async-graphql", graphql(default))]
     pub negotiable: bool,
     #[cfg_attr(feature = "async-graphql", graphql(default))]
     pub tags: Vec<Uuid>,
     pub location_id: Uuid,
-    #[cfg_attr(feature = "async-graphql", graphql(skip_input))]
-    pub liked_by: Vec<Uuid>,
     #[cfg_attr(
         feature = "async-graphql",
         graphql(default_with = "default_date_time()")
@@ -43,7 +39,6 @@ pub struct Listing {
     pub deleted_at: Option<OffsetDateTime>,
 }
 
-/// One of the films in the Star Wars Trilogy
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "async-graphql", derive(Enum))]

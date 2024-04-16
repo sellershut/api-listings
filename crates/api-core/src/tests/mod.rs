@@ -18,7 +18,7 @@ impl Default for Listing {
             category_id: Uuid::now_v7(),
             image_url: String::from("https://dummyimage.com/420x260"),
             other_images: vec![],
-            active: true,
+            published: true,
             tags: vec![],
             location_id: String::default(),
             liked_by: vec![],

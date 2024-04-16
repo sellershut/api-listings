@@ -18,10 +18,11 @@ impl ListingMutation {
         &self,
         ctx: &Context<'_>,
         input: Listing,
+        user_id: Uuid,
     ) -> async_graphql::Result<Listing> {
         let database = ctx.data::<Client>()?;
 
-        match database.create_listing(&input).await {
+        match database.create_listing(&input, &user_id).await {
             Ok(listing) => {
                 SimpleBroker::publish(ListingChanged {
                     mutation_type: super::MutationType::Created,
@@ -40,10 +41,11 @@ impl ListingMutation {
         ctx: &Context<'_>,
         id: Uuid,
         input: Listing,
+        user_id: Uuid,
     ) -> async_graphql::Result<Option<Listing>> {
         let database = ctx.data::<Client>()?;
 
-        match database.update_listing(&id, &input).await {
+        match database.update_listing(&id, &input, &user_id).await {
             Ok(listing) => {
                 SimpleBroker::publish(ListingChanged {
                     mutation_type: super::MutationType::Updated,
@@ -60,10 +62,11 @@ impl ListingMutation {
         &self,
         ctx: &Context<'_>,
         id: Uuid,
+        user_id: Uuid,
     ) -> async_graphql::Result<Option<Listing>> {
         let database = ctx.data::<Client>()?;
 
-        match database.delete_listing(&id).await {
+        match database.delete_listing(&id, &user_id).await {
             Ok(listing) => {
                 SimpleBroker::publish(ListingChanged {
                     mutation_type: super::MutationType::Deleted,

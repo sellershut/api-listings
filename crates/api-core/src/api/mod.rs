@@ -35,10 +35,16 @@ pub trait LocalQueryListings {
 
 #[trait_variant::make(MutateListings: Send)]
 pub trait LocalMutateListings {
-    async fn create_listing(&self, listing: &Listing) -> Result<Listing, CoreError>;
-    async fn update_listing(&self, id: &Uuid, data: &Listing)
+    async fn create_listing(&self, listing: &Listing, user_id: &Uuid)
+        -> Result<Listing, CoreError>;
+    async fn update_listing(
+        &self,
+        id: &Uuid,
+        data: &Listing,
+        user_id: &Uuid,
+    ) -> Result<Option<Listing>, CoreError>;
+    async fn delete_listing(&self, id: &Uuid, user_id: &Uuid)
         -> Result<Option<Listing>, CoreError>;
-    async fn delete_listing(&self, id: &Uuid) -> Result<Option<Listing>, CoreError>;
     async fn upload_images(&self, files: &[&[u8]]) -> Result<Vec<(String, String)>, CoreError>;
 }
 

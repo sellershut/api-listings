@@ -8,7 +8,6 @@ use super::create_string_from_id;
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct DatabaseEntityListing {
     pub id: RecordId,
-    pub user_id: RecordId,
     pub title: String,
     pub description: String,
     pub price: f32,
@@ -21,8 +20,6 @@ pub(crate) struct DatabaseEntityListing {
     pub location_id: RecordId,
     pub condition: ListingCondition,
     pub expires_at: Option<OffsetDateTime>,
-    pub quantity: u32,
-    pub liked_by: Vec<RecordId>,
     pub created_at: OffsetDateTime,
     pub updated_at: Option<OffsetDateTime>,
     pub deleted_at: Option<OffsetDateTime>,
@@ -34,9 +31,6 @@ impl TryFrom<DatabaseEntityListing> for Listing {
     fn try_from(entity: DatabaseEntityListing) -> Result<Self, Self::Error> {
         let pk = create_string_from_id(&entity.id);
         let id = Uuid::parse_str(&pk)?;
-
-        let user_id_fk = create_string_from_id(&entity.user_id);
-        let user_id = Uuid::parse_str(&user_id_fk)?;
 
         let category_id_fk = create_string_from_id(&entity.category_id);
         let category_id = Uuid::parse_str(&category_id_fk)?;
@@ -50,28 +44,19 @@ impl TryFrom<DatabaseEntityListing> for Listing {
             .map(|record_id| Uuid::parse_str(&create_string_from_id(&record_id)))
             .collect::<Result<Vec<Uuid>, _>>()?;
 
-        let likes = entity
-            .liked_by
-            .iter()
-            .map(|like| Uuid::parse_str(&create_string_from_id(like)))
-            .collect::<Result<Vec<Uuid>, _>>()?;
-
         Ok(Listing {
             id,
-            user_id,
             title: entity.title,
             description: entity.description,
             price: entity.price,
             category_id,
             other_images: entity.other_images,
-            active: entity.active,
+            published: entity.active,
             negotiable: entity.negotiable,
             location_id,
-            liked_by: likes,
             created_at: entity.created_at,
             deleted_at: entity.deleted_at,
             condition: entity.condition,
-            quantity: entity.quantity,
             expires_at: entity.expires_at,
             tags,
             image_url: entity.image_url,

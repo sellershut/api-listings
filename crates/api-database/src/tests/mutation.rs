@@ -23,7 +23,7 @@ fn create_listing_item() -> Listing {
         category_id: Uuid::now_v7(),
         image_url: "http://testpicture.com".to_owned(),
         other_images: vec![],
-        active: true,
+        published: true,
         tags: vec![],
         location_id: String::default(),
         liked_by: vec![],

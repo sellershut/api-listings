@@ -97,8 +97,12 @@ async fn clear_listing_cache(redis: &RedisPool, user_id: &Uuid) {
 
 impl MutateListings for Client {
     #[instrument(skip(self), err(Debug))]
-    async fn create_listing(&self, listing: &Listing) -> Result<Listing, CoreError> {
-        check_listing_validity(self, &listing.category_id, &listing.user_id, &listing.tags).await?;
+    async fn create_listing(
+        &self,
+        listing: &Listing,
+        user_id: &Uuid,
+    ) -> Result<Listing, CoreError> {
+        check_listing_validity(self, &listing.category_id, user_id, &listing.tags).await?;
 
         let input = InputListing::from(listing);
         let id = Uuid::now_v7();
@@ -113,7 +117,7 @@ impl MutateListings for Client {
             Some(e) => {
                 let listing = Listing::try_from(e)?;
                 if let Some((ref redis, _ttl)) = self.redis {
-                    clear_listing_cache(redis, &listing.user_id).await;
+                    clear_listing_cache(redis, user_id).await;
                 };
                 debug!("listing created");
                 Ok(listing)
@@ -127,8 +131,9 @@ impl MutateListings for Client {
         &self,
         id: &Uuid,
         data: &Listing,
+        user_id: &Uuid,
     ) -> Result<Option<Listing>, CoreError> {
-        check_listing_validity(self, &data.category_id, &data.user_id, &data.tags).await?;
+        check_listing_validity(self, &data.category_id, user_id, &data.tags).await?;
 
         let input = InputListing::from(data);
 
@@ -143,7 +148,7 @@ impl MutateListings for Client {
             Some(e) => {
                 let listing = Listing::try_from(e)?;
                 if let Some((ref redis, _ttl)) = self.redis {
-                    clear_listing_cache(redis, &listing.user_id).await;
+                    clear_listing_cache(redis, user_id).await;
                 };
                 debug!("listing updated");
                 Ok(Some(listing))
@@ -153,7 +158,11 @@ impl MutateListings for Client {
     }
 
     #[instrument(skip(self), err(Debug))]
-    async fn delete_listing(&self, id: &Uuid) -> Result<Option<Listing>, CoreError> {
+    async fn delete_listing(
+        &self,
+        id: &Uuid,
+        user_id: &Uuid,
+    ) -> Result<Option<Listing>, CoreError> {
         let listing: Option<DatabaseEntityListing> = self
             .client
             .delete((Collection::Listing.to_string(), id.to_string()))
@@ -163,7 +172,7 @@ impl MutateListings for Client {
         match listing.map(Listing::try_from) {
             Some(Ok(listing)) => {
                 if let Some((ref redis, _ttl)) = self.redis {
-                    clear_listing_cache(redis, &listing.user_id).await;
+                    clear_listing_cache(redis, user_id).await;
                 };
                 Ok(Some(listing))
             }
@@ -202,7 +211,6 @@ impl MutateListings for Client {
 
 #[derive(serde::Serialize)]
 struct InputListing<'a> {
-    user_id: RecordId,
     title: &'a str,
     description: &'a str,
     price: f32,
@@ -215,7 +223,6 @@ struct InputListing<'a> {
     liked_by: Vec<RecordId>,
     location_id: RecordId,
     condition: ListingCondition,
-    quantity: u32,
     created_at: &'a OffsetDateTime,
     updated_at: Option<&'a OffsetDateTime>,
     expires_at: Option<&'a OffsetDateTime>,
@@ -235,15 +242,13 @@ impl<'a> From<&'a Listing> for InputListing<'a> {
                 .collect(),
             image_url: &value.image_url,
             description: &value.description,
-            user_id: record("user", &value.user_id),
             price: value.price,
             category_id: record("category", &value.category_id),
             other_images: &value.other_images,
-            active: value.active,
+            active: value.published,
             negotiable: value.negotiable,
             liked_by: vec![],
             condition: value.condition,
-            quantity: value.quantity,
             location_id: record("region", &value.location_id),
             created_at: &value.created_at,
             deleted_at: value.deleted_at.as_ref(),

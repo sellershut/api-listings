@@ -282,7 +282,6 @@ impl QueryListings for Client {
                         .into_iter()
                         .map(|hit| Listing {
                             id: hit.result.id,
-                            user_id: hit.result.user_id,
                             title: hit.result.title,
                             description: hit.result.description,
                             negotiable: hit.result.negotiable,
@@ -291,12 +290,10 @@ impl QueryListings for Client {
                             image_url: hit.result.image_url,
                             condition: hit.result.condition,
                             expires_at: hit.result.expires_at,
-                            quantity: hit.result.quantity,
                             other_images: hit.result.other_images,
-                            active: hit.result.active,
+                            published: hit.result.published,
                             tags: hit.result.tags,
                             location_id: hit.result.location_id,
-                            liked_by: hit.result.liked_by,
                             created_at: hit.result.created_at,
                             updated_at: hit.result.updated_at,
                             deleted_at: hit.result.deleted_at,
