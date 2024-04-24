@@ -2,8 +2,7 @@ use api_core::{
     api::{CoreError, QueryListingCondition},
     ListingCondition,
 };
-use tracing::{debug, error, instrument};
-use uuid::Uuid;
+use tracing::{error, instrument};
 
 use crate::{
     collections::Collection,

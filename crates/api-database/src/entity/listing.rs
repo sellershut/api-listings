@@ -1,4 +1,4 @@
-use api_core::{api::CoreError, reexports::uuid::Uuid, Listing, ListingCondition};
+use api_core::{api::CoreError, reexports::uuid::Uuid, Listing};
 use serde::{Deserialize, Serialize};
 use surrealdb::opt::RecordId;
 use time::OffsetDateTime;

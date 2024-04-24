@@ -1,4 +1,4 @@
-use api_core::{api::QueryListingCondition, reexports::uuid::Uuid, ListingCondition};
+use api_core::{api::QueryListingCondition, ListingCondition};
 use async_graphql::{Context, Object};
 use tracing::instrument;
 

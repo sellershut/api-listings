@@ -7,7 +7,7 @@ use crate::{
 use api_core::{
     api::{CoreError, MutateListings},
     reexports::uuid::Uuid,
-    Listing, ListingCondition,
+    Listing,
 };
 use futures_util::TryFutureExt;
 use surrealdb::opt::RecordId;
