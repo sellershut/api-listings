@@ -1,7 +1,7 @@
 mod error;
 pub use std::fmt::Debug;
 
-use crate::{Listing, Tag};
+use crate::{Listing, ListingCondition, Tag};
 
 pub use error::*;
 pub use uuid::Uuid;
@@ -31,6 +31,13 @@ pub trait LocalQueryListings {
         &self,
         query: impl AsRef<str> + Send + Debug,
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError>;
+}
+
+#[trait_variant::make(QueryListingCondition: Send)]
+pub trait LocalQueryListingCondition {
+    async fn get_conditions(
+        &self,
+    ) -> Result<impl ExactSizeIterator<Item = ListingCondition>, CoreError>;
 }
 
 #[trait_variant::make(MutateListings: Send)]

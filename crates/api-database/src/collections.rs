@@ -6,11 +6,12 @@ use surrealdb::{
 
 #[non_exhaustive]
 #[derive(Copy, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub(crate) enum Collection {
     Listing,
     User,
     Tag,
+    ListingCondition,
 }
 
 impl From<&str> for Collection {
@@ -31,6 +32,7 @@ impl std::fmt::Display for Collection {
                 Collection::Listing => "listing",
                 Collection::Tag => "tag",
                 Collection::User => "user",
+                Collection::ListingCondition => "listing_condition",
             }
         )
     }

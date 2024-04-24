@@ -1,3 +1,4 @@
+mod condition;
 mod tags;
 
 use api_core::{
@@ -84,6 +85,7 @@ async fn get_listings_by_field(
         Collection::Listing => todo!(),
         Collection::User => CacheKey::UserListing { user_id: id },
         Collection::Tag => todo!(),
+        Collection::ListingCondition => todo!(),
     };
 
     if let Some((ref redis, ttl)) = db.redis {
@@ -288,7 +290,7 @@ impl QueryListings for Client {
                             price: hit.result.price,
                             category_id: hit.result.category_id,
                             image_url: hit.result.image_url,
-                            condition: hit.result.condition,
+                            condition_id: hit.result.condition_id,
                             expires_at: hit.result.expires_at,
                             other_images: hit.result.other_images,
                             published: hit.result.published,

@@ -20,7 +20,7 @@ pub struct Listing {
     pub price: f32,
     pub category_id: Uuid,
     pub image_url: String,
-    pub condition: ListingCondition,
+    pub condition_id: Uuid,
     #[cfg_attr(feature = "async-graphql", graphql(default))]
     pub other_images: Vec<String>,
     pub published: bool,
@@ -39,17 +39,12 @@ pub struct Listing {
     pub deleted_at: Option<OffsetDateTime>,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "async-graphql", derive(Enum))]
-pub enum ListingCondition {
-    New,
-    LikeNew,
-    UsedExcellent,
-    UsedGood,
-    UsedFair,
-    UsedRefurbished,
-    PartsOrNotWorking,
+#[cfg_attr(feature = "async-graphql", derive(InputObject, SimpleObject))]
+pub struct ListingCondition {
+    pub id: Uuid,
+    pub condition: String,
 }
 
 #[cfg(feature = "async-graphql")]

@@ -18,7 +18,7 @@ pub(crate) struct DatabaseEntityListing {
     pub negotiable: bool,
     pub tags: Vec<RecordId>,
     pub location_id: RecordId,
-    pub condition: ListingCondition,
+    pub condition_id: RecordId,
     pub expires_at: Option<OffsetDateTime>,
     pub created_at: OffsetDateTime,
     pub updated_at: Option<OffsetDateTime>,
@@ -38,6 +38,9 @@ impl TryFrom<DatabaseEntityListing> for Listing {
         let location_id_fk = create_string_from_id(&entity.location_id);
         let location_id = Uuid::parse_str(&location_id_fk)?;
 
+        let condition_id_fk = create_string_from_id(&entity.condition_id);
+        let condition_id = Uuid::parse_str(&condition_id_fk)?;
+
         let tags = entity
             .tags
             .into_iter()
@@ -56,7 +59,7 @@ impl TryFrom<DatabaseEntityListing> for Listing {
             location_id,
             created_at: entity.created_at,
             deleted_at: entity.deleted_at,
-            condition: entity.condition,
+            condition_id,
             expires_at: entity.expires_at,
             tags,
             image_url: entity.image_url,

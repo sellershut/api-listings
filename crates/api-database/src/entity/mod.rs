@@ -3,6 +3,7 @@ use uuid::Uuid;
 
 use crate::collections::Collection;
 
+pub(crate) mod condition;
 pub(crate) mod listing;
 
 pub(crate) mod tag;

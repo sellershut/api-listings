@@ -7,6 +7,7 @@ use redis::ToRedisArgs;
 pub enum CacheKey<'a> {
     AllListings,
     AllTags,
+    AllConditions,
     UserListing { user_id: &'a Uuid },
     Listing { id: &'a Uuid },
     Tag { id: &'a Uuid },
@@ -26,6 +27,9 @@ impl Display for CacheKey<'_> {
                 }
                 CacheKey::Tag { id } => {
                     format!("tag={id}")
+                }
+                CacheKey::AllConditions => {
+                    format!("conditions=all")
                 }
             }
         )
