@@ -18,7 +18,7 @@ fake = "2.9.2"
 futures-channel = "0.3.30"
 futures-timer = "3.0.3"
 futures-util = "0.3.30"
-meilisearch-sdk = { version = "0.25.0", default-features = false }
+meilisearch-sdk = { version = "0.24.3", default-features = false }
 opentelemetry = "0.22.0"
 opentelemetry-http = "0.11.1"
 serde = "1.0.198"
@@ -34,7 +34,7 @@ uuid = "1.8.0"
 
 # https://github.com/meilisearch/meilisearch-rust/pull/524
 [patch.crates-io]
-meilisearch-sdk = { git = "https://github.com/meilisearch/meilisearch-rust", rev = "cb32534" }
+meilisearch-sdk = { git = "https://github.com/rtkay123/meilisearch-rust", branch = "request_clients" }
 
 [profile.release]
 lto = true
