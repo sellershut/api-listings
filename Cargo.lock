@@ -3484,25 +3484,7 @@ dependencies = [
  "chrono",
  "geo 0.26.0",
  "regex",
- "revision-derive 0.5.0",
- "roaring",
- "rust_decimal",
- "serde",
- "thiserror",
- "uuid",
-]
-
-[[package]]
-name = "revision"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "588784c1d9453cfd2ce1b7aff06c903513677cf0e63779a0a3085ee8a44f5b17"
-dependencies = [
- "bincode",
- "chrono",
- "geo 0.26.0",
- "regex",
- "revision-derive 0.7.0",
+ "revision-derive",
  "roaring",
  "rust_decimal",
  "serde",
@@ -3515,19 +3497,6 @@ name = "revision-derive"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf996fc5f61f1dbec35799b5c00c6dda12e8862e8cb782ed24e10d0292e60ed3"
-dependencies = [
- "darling",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn 2.0.59",
-]
-
-[[package]]
-name = "revision-derive"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "854ff0b6794d4e0aab5e4486870941caefe9f258e63cad2f21b49a6302377c85"
 dependencies = [
  "darling",
  "proc-macro-error",
@@ -4373,9 +4342,9 @@ checksum = "81cdd64d312baedb58e21336b31bc043b77e01cc99033ce76ef539f78e965ebc"
 
 [[package]]
 name = "surrealdb"
-version = "1.4.2"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c45d00b61417f95754862c5d4cb0ef1ef51d285d38e3c1d2dec1cea600558c15"
+checksum = "009e5d423255fca9e82603af890b3fd373e4d2540c0059c56b92cd2e57f87409"
 dependencies = [
  "async-channel",
  "bincode",
@@ -4390,7 +4359,7 @@ dependencies = [
  "path-clean",
  "pharos",
  "reqwest 0.11.27",
- "revision 0.7.0",
+ "revision",
  "ring 0.17.8",
  "rust_decimal",
  "rustls 0.21.11",
@@ -4451,7 +4420,7 @@ dependencies = [
  "radix_trie",
  "rand",
  "regex",
- "revision 0.5.0",
+ "revision",
  "ring 0.17.8",
  "roaring",
  "rust-stemmers",

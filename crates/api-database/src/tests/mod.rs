@@ -41,6 +41,7 @@ async fn create_client(
         &db_name,
         &users_api,
         &categories_api,
+        &crate::S3Config::default(),
     )
     .await?;
 

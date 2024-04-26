@@ -57,7 +57,11 @@ impl LocalQueryListings for SampleDb {
 }
 
 impl LocalMutateListings for SampleDb {
-    async fn create_listing(&self, listing: &Listing) -> Result<Listing, CoreError> {
+    async fn create_listing(
+        &self,
+        listing: &Listing,
+        _user_id: &Uuid,
+    ) -> Result<Listing, CoreError> {
         Ok(listing.to_owned())
     }
 
@@ -65,17 +69,30 @@ impl LocalMutateListings for SampleDb {
         &self,
         _id: &Uuid,
         data: &Listing,
+        _user_id: &Uuid,
     ) -> Result<Option<Listing>, CoreError> {
         Ok(Some(data.to_owned()))
     }
 
-    async fn delete_listing(&self, _id: &Uuid) -> Result<Option<Listing>, CoreError> {
+    async fn delete_listing(
+        &self,
+        _id: &Uuid,
+        _user_id: &Uuid,
+    ) -> Result<Option<Listing>, CoreError> {
         Ok(None)
+    }
+
+    async fn upload_images(&self, _files: &[&[u8]]) -> Result<Vec<(String, String)>, CoreError> {
+        Ok(Default::default())
     }
 }
 
 impl MutateListings for SampleDbSend {
-    async fn create_listing(&self, listing: &Listing) -> Result<Listing, CoreError> {
+    async fn create_listing(
+        &self,
+        listing: &Listing,
+        _user_id: &Uuid,
+    ) -> Result<Listing, CoreError> {
         Ok(listing.to_owned())
     }
 
@@ -83,12 +100,21 @@ impl MutateListings for SampleDbSend {
         &self,
         _id: &Uuid,
         data: &Listing,
+        _user_id: &Uuid,
     ) -> Result<Option<Listing>, CoreError> {
         Ok(Some(data.to_owned()))
     }
 
-    async fn delete_listing(&self, _id: &Uuid) -> Result<Option<Listing>, CoreError> {
+    async fn delete_listing(
+        &self,
+        _id: &Uuid,
+        _user_id: &Uuid,
+    ) -> Result<Option<Listing>, CoreError> {
         Ok(None)
+    }
+
+    async fn upload_images(&self, _files: &[&[u8]]) -> Result<Vec<(String, String)>, CoreError> {
+        Ok(Default::default())
     }
 }
 

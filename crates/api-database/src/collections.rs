@@ -12,6 +12,7 @@ pub(crate) enum Collection {
     User,
     Tag,
     ListingCondition,
+    Category,
 }
 
 impl From<&str> for Collection {
@@ -33,6 +34,7 @@ impl std::fmt::Display for Collection {
                 Collection::Tag => "tag",
                 Collection::User => "user",
                 Collection::ListingCondition => "listing_condition",
+                Collection::Category => "category",
             }
         )
     }

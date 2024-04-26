@@ -1,7 +1,7 @@
 mod error;
 pub use std::fmt::Debug;
 
-use crate::{Listing, ListingCondition, Tag};
+use crate::{Listing, ListingCondition};
 
 pub use error::*;
 pub use uuid::Uuid;
@@ -53,21 +53,4 @@ pub trait LocalMutateListings {
     async fn delete_listing(&self, id: &Uuid, user_id: &Uuid)
         -> Result<Option<Listing>, CoreError>;
     async fn upload_images(&self, files: &[&[u8]]) -> Result<Vec<(String, String)>, CoreError>;
-}
-
-#[trait_variant::make(QueryTags: Send)]
-pub trait LocalQueryTags {
-    async fn get_tags(&self) -> Result<impl ExactSizeIterator<Item = Tag>, CoreError>;
-    async fn get_tag_by_id(&self, id: &Uuid) -> Result<Option<Tag>, CoreError>;
-    async fn search(
-        &self,
-        query: impl AsRef<str> + Send + Debug,
-    ) -> Result<impl ExactSizeIterator<Item = Tag>, CoreError>;
-}
-
-#[trait_variant::make(MutateTags: Send)]
-pub trait LocalMutateTag {
-    async fn create_tag(&self, tag: &Tag) -> Result<Tag, CoreError>;
-    async fn update_tag(&self, id: &Uuid, data: &Tag) -> Result<Option<Tag>, CoreError>;
-    async fn delete_tag(&self, id: &Uuid) -> Result<Option<Tag>, CoreError>;
 }

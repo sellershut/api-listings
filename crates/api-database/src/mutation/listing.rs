@@ -1,6 +1,6 @@
 use crate::{
     collections::Collection,
-    entity::{create_thing_from_id, listing::DatabaseEntityListing, tag::DatabaseEntityTag},
+    entity::listing::DatabaseEntityListing,
     graphql_requests::{find_category_by_id, find_user_by_id},
     redis::{cache_keys::CacheKey, PoolLike, PooledConnectionLike, RedisPool},
 };
@@ -10,9 +10,9 @@ use api_core::{
     Listing,
 };
 use futures_util::TryFutureExt;
-use surrealdb::opt::RecordId;
+use surrealdb::{opt::RecordId, sql::Thing};
 use time::OffsetDateTime;
-use tracing::{debug, error, instrument, trace, Instrument};
+use tracing::{debug, error, instrument, trace};
 
 use crate::{map_db_error, Client};
 
@@ -20,7 +20,6 @@ async fn check_listing_validity(
     client: &Client,
     category_id: &Uuid,
     user_id: &Uuid,
-    tags: &[Uuid],
 ) -> Result<(), CoreError> {
     // check if category exists
     let category_result = find_category_by_id(
@@ -39,21 +38,6 @@ async fn check_listing_validity(
     let (category_ok, user_ok) =
         futures_util::future::try_join(category_result, user_result).await?;
 
-    let mut futs = Vec::with_capacity(tags.len());
-    for i in tags.iter() {
-        futs.push(async {
-            client
-                .client
-                .select::<Option<DatabaseEntityTag>>(create_thing_from_id(Collection::Tag, i))
-                .await
-                .map_err(map_db_error)
-        });
-    }
-
-    let tags_exist = futures_util::future::try_join_all(futs)
-        .instrument(tracing::info_span!("verifying tags"))
-        .await?;
-
     if !category_ok {
         return Err(CoreError::Database(format!(
             "category: {} does not exist",
@@ -65,13 +49,6 @@ async fn check_listing_validity(
         return Err(CoreError::Database(format!(
             "user: {} does not exist",
             user_id
-        )));
-    }
-
-    // check if provided tags exist
-    if !tags_exist.is_empty() && tags_exist.iter().any(|f| f.is_none()) {
-        return Err(CoreError::Database(String::from(
-            "One or more of your tags does not exist",
         )));
     }
 
@@ -102,16 +79,56 @@ impl MutateListings for Client {
         listing: &Listing,
         user_id: &Uuid,
     ) -> Result<Listing, CoreError> {
-        check_listing_validity(self, &listing.category_id, user_id, &listing.tags).await?;
+        check_listing_validity(self, &listing.category_id, user_id).await?;
 
         let input = InputListing::from(listing);
         let id = Uuid::now_v7();
+
+        self.client
+            .query(
+                "
+            BEGIN TRANSACTION;
+            LET $listing_id = (CREATE listing:uuid() SET
+                title = type::string($title),
+                description = type::string($description),
+                image_url = type::string($img_url)
+                price = type::decimal($price),
+                category_id = type::thing($category_tbl, $category_id),
+                other_images = {},
+                active = type::boolean($active),
+                negotiable = type::boolean($negotiable),
+                location_id = {},
+                condition_id =type::thing($condition_tbl, $condition_id),
+                created_at = time::now(),
+                updated_at = time::now(),
+                expires_at = {},
+            RETURN id);
+            RELATE type::thing($user_tbl, $user_id) -> sells -> $listing_id SET quantity=10;
+            COMMIT TRANSACTION;
+          ",
+            )
+            .bind(("title", input.title))
+            .bind(("description", input.description))
+            .bind(("img_url", input.image_url))
+            .bind(("price", input.price))
+            .bind(("category_tbl", Collection::Category))
+            .bind(("category_id", listing.category_id))
+            .bind(("other_img", input.title))
+            .bind(("active", input.active))
+            .bind(("negotiable", input.title))
+            .bind(("condition_id", listing.condition_id))
+            .bind(("expires", input.title))
+            .bind(("title", input.title))
+            .bind(("user_id", user_id))
+            .bind(("user_tbl", Collection::User));
         let item: Option<DatabaseEntityListing> = self
             .client
             .create((Collection::Listing.to_string(), id.to_string()))
             .content(input)
             .await
             .map_err(map_db_error)?;
+
+        // relate items: user -> sells -> listing
 
         match item {
             Some(e) => {
@@ -133,7 +150,7 @@ impl MutateListings for Client {
         data: &Listing,
         user_id: &Uuid,
     ) -> Result<Option<Listing>, CoreError> {
-        check_listing_validity(self, &data.category_id, user_id, &data.tags).await?;
+        check_listing_validity(self, &data.category_id, user_id).await?;
 
         let input = InputListing::from(data);
 
@@ -219,11 +236,10 @@ struct InputListing<'a> {
     other_images: &'a [String],
     active: bool,
     negotiable: bool,
-    tags: Vec<RecordId>,
     location_id: RecordId,
     condition_id: RecordId,
     created_at: &'a OffsetDateTime,
-    updated_at: Option<&'a OffsetDateTime>,
+    updated_at: &'a OffsetDateTime,
     expires_at: Option<&'a OffsetDateTime>,
     deleted_at: Option<&'a OffsetDateTime>,
 }
@@ -234,11 +250,6 @@ impl<'a> From<&'a Listing> for InputListing<'a> {
             |collection: &str, uuid: &Uuid| RecordId::from((collection, uuid.to_string().as_str()));
         Self {
             title: &value.title,
-            tags: value
-                .tags
-                .iter()
-                .map(|str| RecordId::from((Collection::Tag.to_string(), str.to_string())))
-                .collect(),
             image_url: &value.image_url,
             description: &value.description,
             price: value.price,
@@ -250,7 +261,7 @@ impl<'a> From<&'a Listing> for InputListing<'a> {
             location_id: record("region", &value.location_id),
             created_at: &value.created_at,
             deleted_at: value.deleted_at.as_ref(),
-            updated_at: value.updated_at.as_ref(),
+            updated_at: &value.updated_at,
             expires_at: value.expires_at.as_ref(),
         }
     }

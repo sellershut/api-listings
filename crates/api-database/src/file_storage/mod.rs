@@ -5,7 +5,7 @@ use tracing::{info, warn};
 
 use crate::ClientError;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct S3Config {
     pub bucket_name: String,
     pub region: String,

@@ -26,8 +26,6 @@ pub struct Listing {
     pub published: bool,
     #[cfg_attr(feature = "async-graphql", graphql(default))]
     pub negotiable: bool,
-    #[cfg_attr(feature = "async-graphql", graphql(default))]
-    pub tags: Vec<Uuid>,
     pub location_id: Uuid,
     #[cfg_attr(
         feature = "async-graphql",
@@ -35,7 +33,7 @@ pub struct Listing {
     )]
     pub created_at: OffsetDateTime,
     pub expires_at: Option<OffsetDateTime>,
-    pub updated_at: Option<OffsetDateTime>,
+    pub updated_at: OffsetDateTime,
     pub deleted_at: Option<OffsetDateTime>,
 }
 
@@ -50,16 +48,6 @@ pub struct ListingCondition {
 #[cfg(feature = "async-graphql")]
 fn default_date_time() -> OffsetDateTime {
     OffsetDateTime::now_utc()
-}
-
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "async-graphql", derive(InputObject, SimpleObject))]
-#[cfg_attr(feature = "async-graphql", graphql(input_name = "TagInput"))]
-pub struct Tag {
-    #[cfg_attr(feature = "async-graphql", graphql(skip_input))]
-    pub id: Uuid,
-    pub name: String,
 }
 
 pub mod reexports {

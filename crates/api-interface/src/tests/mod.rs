@@ -65,9 +65,17 @@ async fn init_schema() -> async_graphql::Schema<
         categories: &api_categories,
     };
 
-    ApiSchemaBuilder::new(database_credentials, None, None, apis)
-        .await
-        .expect("schema created successfully")
-        .with_extension(DummyExtension)
-        .build()
+    ApiSchemaBuilder::new(
+        database_credentials,
+        None,
+        None,
+        apis,
+        &api_database::S3Config {
+            ..Default::default()
+        },
+    )
+    .await
+    .expect("schema created successfully")
+    .with_extension(DummyExtension)
+    .build()
 }

@@ -1,5 +1,4 @@
 mod condition;
-mod tags;
 
 use api_core::{
     api::{CoreError, QueryListings},
@@ -294,7 +293,6 @@ impl QueryListings for Client {
                             expires_at: hit.result.expires_at,
                             other_images: hit.result.other_images,
                             published: hit.result.published,
-                            tags: hit.result.tags,
                             location_id: hit.result.location_id,
                             created_at: hit.result.created_at,
                             updated_at: hit.result.updated_at,

@@ -4,27 +4,34 @@ mod db;
 use crate::{tests::db::SampleDbSend, Listing};
 
 use self::db::SampleDb;
+use fake::{faker::lorem::en::Words, Fake};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
 impl Default for Listing {
     fn default() -> Self {
+        let title: Vec<String> = Words(3..5).fake();
+        let title = title.join(" ");
+
+        let description: Vec<String> = Words(10..50).fake();
+        let description = description.join(" ");
+
         Self {
             id: Uuid::now_v7(),
-            user_id: Uuid::now_v7(),
-            title: String::from("My listing"),
-            description: String::from("More info about listing"),
+            title,
+            description,
             price: 250.50,
             category_id: Uuid::now_v7(),
             image_url: String::from("https://dummyimage.com/420x260"),
             other_images: vec![],
             published: true,
-            tags: vec![],
-            location_id: String::default(),
-            liked_by: vec![],
+            location_id: Uuid::now_v7(),
             created_at: OffsetDateTime::now_utc(),
             deleted_at: None,
-            updated_at: None,
+            updated_at: OffsetDateTime::now_utc(),
+            condition_id: Uuid::now_v7(),
+            negotiable: true,
+            expires_at: None,
         }
     }
 }
@@ -92,14 +99,15 @@ async fn trait_blank_mutations() {
 
     let listing = Listing::default();
 
-    let db = SampleDb.create_listing(&listing).await;
+    let user = Uuid::now_v7();
+    let db = SampleDb.create_listing(&listing, &user).await;
     assert!(db.is_ok());
 
     let id = Uuid::now_v7();
-    let db = SampleDb.update_listing(&id, &listing).await;
+    let db = SampleDb.update_listing(&id, &listing, &user).await;
     assert!(db.is_ok());
 
-    let db = SampleDb.delete_listing(&id).await;
+    let db = SampleDb.delete_listing(&id, &user).await;
     assert!(db.is_ok());
 }
 
@@ -109,14 +117,15 @@ async fn mutation_returns_send() {
 
     let listing = Listing::default();
 
+    let user = Uuid::now_v7();
     let id = Uuid::now_v7();
-    let db = SampleDbSend.create_listing(&listing).await;
+    let db = SampleDbSend.create_listing(&listing, &user).await;
     assert!(db.is_ok());
 
-    let db = SampleDbSend.update_listing(&id, &listing).await;
+    let db = SampleDbSend.update_listing(&id, &listing, &user).await;
     assert!(db.is_ok());
 
-    let db = SampleDbSend.delete_listing(&id).await;
+    let db = SampleDbSend.delete_listing(&id, &user).await;
     assert!(db.is_ok());
 }
 
