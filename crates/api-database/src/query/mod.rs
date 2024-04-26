@@ -80,11 +80,13 @@ async fn get_listings_by_field(
 ) -> Result<std::vec::IntoIter<Listing>, CoreError> {
     let collection = Collection::from(field);
     let field_id_value = create_thing_from_id(collection, id);
+    // TODO: cache_key from coll
     let cache_key = match collection {
         Collection::Listing => todo!(),
         Collection::User => CacheKey::UserListing { user_id: id },
         Collection::Tag => todo!(),
         Collection::ListingCondition => todo!(),
+        Collection::Category => todo!(),
     };
 
     if let Some((ref redis, ttl)) = db.redis {

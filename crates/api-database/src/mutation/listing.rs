@@ -10,7 +10,7 @@ use api_core::{
     Listing,
 };
 use futures_util::TryFutureExt;
-use surrealdb::{opt::RecordId, sql::Thing};
+use surrealdb::opt::RecordId;
 use time::OffsetDateTime;
 use tracing::{debug, error, instrument, trace};
 
@@ -82,61 +82,66 @@ impl MutateListings for Client {
         check_listing_validity(self, &listing.category_id, user_id).await?;
 
         let input = InputListing::from(listing);
-        let id = Uuid::now_v7();
+        trace!("creating listing");
 
-        self.client
+        // TODO: update expires at and location
+        let mut item = self
+            .client
             .query(
-                "
-            BEGIN TRANSACTION;
-            LET $listing_id = (CREATE listing:uuid() SET
-                title = type::string($title),
-                description = type::string($description),
-                image_url = type::string($img_url)
-                price = type::decimal($price),
-                category_id = type::thing($category_tbl, $category_id),
-                other_images = {},
-                active = type::boolean($active),
-                negotiable = type::boolean($negotiable),
-                location_id = {},
-                condition_id =type::thing($condition_tbl, $condition_id),
-                created_at = time::now(),
-                updated_at = time::now(),
-                expires_at = {},
-            RETURN id);
-            RELATE type::thing($user_tbl, $user_id) -> sells -> $listing_id SET quantity=10;
-            COMMIT TRANSACTION;
-          ",
+                "BEGIN TRANSACTION;
+            LET $listing = (CREATE ONLY listing:uuid() CONTENT {
+                title: type::string($title),
+                description: type::string($description),
+                image_url: type::string($img_url),
+                price: type::decimal($price),
+                other_images: [],
+                category_id: type::thing($category_tbl, $category_id),
+                active: type::bool($active),
+                negotiable: type::bool($negotiable),
+                location_id: type::thing($region_tbl, rand::uuid::v7()),
+                condition_id: type::thing($condition_tbl, $condition_id),
+                created_at: time::now(),
+                updated_at: time::now(),
+                expires_at: time::now()
+            }).id;
+            LET $user_node = type::thing($user_tbl, $user_id);
+            RELATE $user_node->sells->$listing CONTENT {
+                 in: $user_node,
+                 quantity: type::int($quantity),
+                 out: $listing
+            };
+            COMMIT TRANSACTION;",
             )
             .bind(("title", input.title))
             .bind(("description", input.description))
             .bind(("img_url", input.image_url))
             .bind(("price", input.price))
             .bind(("category_tbl", Collection::Category))
-            .bind(("category_id", listing.category_id))
-            .bind(("other_img", input.title))
+            .bind(("category_id", listing.category_id.to_string()))
+            // .bind(("other_img", input.title))
             .bind(("active", input.active))
-            .bind(("negotiable", input.title))
-            .bind(("condition_id", listing.condition_id))
-            .bind(("expires", input.title))
-            .bind(("title", input.title))
-            .bind(("user_id", user_id))
-            .bind(("user_tbl", Collection::User));
-        let item: Option<DatabaseEntityListing> = self
-            .client
-            .create((Collection::Listing.to_string(), id.to_string()))
-            .content(input)
+            .bind(("negotiable", input.negotiable))
+            .bind(("condition_id", listing.condition_id.to_string()))
+            .bind(("condition_tbl", Collection::ListingCondition))
+            // .bind(("expires", input.title))
+            .bind(("user_id", user_id.to_string()))
+            .bind(("region_tbl", "region"))
+            .bind(("quantity", 10))
+            .bind(("user_tbl", Collection::User))
             .await
-            .map_err(map_db_error)?;
+            .unwrap();
 
-        // relate items: user -> sells -> listing
+        println!("{item:#?}");
+        let resp: Option<DatabaseEntityListing> = item.take(0).map_err(map_db_error)?;
 
-        match item {
+        match resp {
             Some(e) => {
                 let listing = Listing::try_from(e)?;
                 if let Some((ref redis, _ttl)) = self.redis {
                     clear_listing_cache(redis, user_id).await;
                 };
-                debug!("listing created");
+                trace!("listing created");
+                debug!("listing content: {:?}", listing);
                 Ok(listing)
             }
             None => Err(CoreError::Unreachable),
