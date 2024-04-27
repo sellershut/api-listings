@@ -87,7 +87,7 @@ impl MutateListings for Client {
         let input = InputListing::from(listing);
         trace!("creating listing");
 
-        // TODO: update expires at and location
+        // TODO: fix location
         let mut item = self
             .client
             .query(
@@ -100,7 +100,6 @@ impl MutateListings for Client {
                 other_images: [],
                 active: type::bool($active),
                 negotiable: type::bool($negotiable),
-                location_id: type::thing($region_tbl, rand::uuid::v7()),
                 updated: time::now(),
                 deleted: NULL,
                 expires: IF type::is::none($expires) OR type::is::null($expires) THEN
@@ -140,7 +139,7 @@ impl MutateListings for Client {
             .bind(("negotiable", input.negotiable))
             .bind(("condition_id", condition_id.to_string()))
             .bind(("condition_tbl", Collection::ListingCondition))
-            // .bind(("expires", input.title))
+            .bind(("expires", input.expires_at))
             .bind(("user_id", user_id.to_string()))
             .bind(("region_tbl", "region"))
             .bind(("quantity", quantity))
