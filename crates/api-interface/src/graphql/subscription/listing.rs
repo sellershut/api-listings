@@ -1,28 +1,20 @@
 use api_core::{api::QueryListings, Listing};
-use async_graphql::{Context, Object, Subscription};
-use futures_util::{Stream, StreamExt};
+use async_graphql::{Context, Object, Result, Subscription};
+use futures_util::Stream;
 
 use crate::graphql::{extract_db, mutation::MutationType, subscription::ListingChanged};
-
-use super::broker::SimpleBroker;
 
 #[derive(Default)]
 pub struct ListingSubscription;
 
 #[Subscription]
 impl ListingSubscription {
-    async fn listings(
-        &self,
-        mutation_type: Option<MutationType>,
-    ) -> impl Stream<Item = ListingChanged> {
-        SimpleBroker::<ListingChanged>::subscribe().filter(move |event| {
-            let res = if let Some(mutation_type) = mutation_type {
-                event.mutation_type == mutation_type
-            } else {
-                true
-            };
-            async move { res }
-        })
+    async fn listings<'a>(
+        &'a self,
+        ctx: &'a Context<'a>,
+    ) -> Result<impl Stream<Item = Listing> + 'a> {
+        let database = extract_db(ctx)?;
+        Ok(database.live_listings().await?)
     }
 }
 

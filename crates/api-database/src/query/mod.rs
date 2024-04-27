@@ -5,7 +5,9 @@ use api_core::{
     reexports::uuid::Uuid,
     Listing,
 };
+use futures_util::{Stream, StreamExt};
 use meilisearch_sdk::{SearchQuery, SearchResults};
+use surrealdb::Notification;
 use tracing::{debug, error, instrument};
 
 use crate::{
@@ -135,6 +137,36 @@ async fn get_listings_by_field(
         let listings = items?;
 
         Ok(listings.into_iter())
+    }
+}
+
+impl Client {
+    pub async fn live_listings(&self) -> Result<impl Stream<Item = Listing> + '_, CoreError> {
+        let streams = self
+            .client
+            .select(Collection::Listing)
+            .live()
+            .await
+            .map_err(map_db_error)?;
+
+        Ok(streams.filter_map(|f| async move {
+            match f {
+                Ok(f) => {
+                    let f: Notification<DatabaseEntityListing> = f;
+                    match Listing::try_from(f.data) {
+                        Ok(d) => Some(d),
+                        Err(e) => {
+                            error!("{e:?}");
+                            None
+                        }
+                    }
+                }
+                Err(e) => {
+                    error!("{e:?}");
+                    None
+                }
+            }
+        }))
     }
 }
 

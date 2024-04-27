@@ -6,8 +6,6 @@ use api_database::Client;
 use async_graphql::{Context, InputObject, Object};
 use tracing::instrument;
 
-use crate::graphql::subscription::{broker::SimpleBroker, ListingChanged};
-
 #[derive(Default, Debug)]
 pub struct ListingMutation;
 
@@ -40,14 +38,7 @@ impl ListingMutation {
             )
             .await
         {
-            Ok(listing) => {
-                SimpleBroker::publish(ListingChanged {
-                    mutation_type: super::MutationType::Created,
-                    id: listing.id,
-                });
-
-                Ok(listing)
-            }
+            Ok(listing) => Ok(listing),
             Err(e) => Err(e.into()),
         }
     }
@@ -74,13 +65,7 @@ impl ListingMutation {
             )
             .await
         {
-            Ok(listing) => {
-                SimpleBroker::publish(ListingChanged {
-                    mutation_type: super::MutationType::Updated,
-                    id,
-                });
-                Ok(listing)
-            }
+            Ok(listing) => Ok(listing),
             Err(e) => Err(e.into()),
         }
     }
@@ -95,13 +80,7 @@ impl ListingMutation {
         let database = ctx.data::<Client>()?;
 
         match database.delete_listing(&id, &user_id).await {
-            Ok(listing) => {
-                SimpleBroker::publish(ListingChanged {
-                    mutation_type: super::MutationType::Deleted,
-                    id,
-                });
-                Ok(listing)
-            }
+            Ok(listing) => Ok(listing),
             Err(e) => Err(e.into()),
         }
     }

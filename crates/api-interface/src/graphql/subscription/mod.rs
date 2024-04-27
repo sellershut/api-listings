@@ -1,4 +1,3 @@
-pub(crate) mod broker;
 pub(crate) mod listing;
 use api_core::reexports::uuid::Uuid;
 
