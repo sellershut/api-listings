@@ -31,6 +31,10 @@ pub struct Listing {
     )]
     pub created: OffsetDateTime,
     pub expires: Option<OffsetDateTime>,
+    #[cfg_attr(
+        feature = "async-graphql",
+        graphql(default_with = "default_date_time()")
+    )]
     pub updated: OffsetDateTime,
     pub deleted: Option<OffsetDateTime>,
 }

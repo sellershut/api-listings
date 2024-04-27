@@ -101,9 +101,13 @@ impl MutateListings for Client {
                 active: type::bool($active),
                 negotiable: type::bool($negotiable),
                 location_id: type::thing($region_tbl, rand::uuid::v7()),
-                created_at: time::now(),
-                updated_at: time::now(),
-                expires_at: time::now()
+                updated: time::now(),
+                deleted: NULL,
+                expires: IF type::is::none($expires) OR type::is::null($expires) THEN
+                            NULL
+                         ELSE
+                            type::datetime($expires)
+                         END
             });
             LET $condition_id = type::thing($condition_tbl, $condition_id);
             LET $category_id = type::thing($category_tbl, $category_id);
