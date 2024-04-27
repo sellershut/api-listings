@@ -204,8 +204,8 @@ impl QueryListings for Client {
     #[instrument(skip(self), err(Debug))]
     async fn get_listings_in_price_range(
         &self,
-        min: f32,
-        max: f32,
+        min: f64,
+        max: f64,
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError> {
         let listings = if let Some((ref redis, ttl)) = self.redis {
             let cache_key = CacheKey::AllListings;
@@ -289,16 +289,13 @@ impl QueryListings for Client {
                             description: hit.result.description,
                             negotiable: hit.result.negotiable,
                             price: hit.result.price,
-                            category_id: hit.result.category_id,
                             image_url: hit.result.image_url,
-                            condition_id: hit.result.condition_id,
-                            expires_at: hit.result.expires_at,
+                            expires: hit.result.expires,
                             other_images: hit.result.other_images,
                             published: hit.result.published,
-                            location_id: hit.result.location_id,
-                            created_at: hit.result.created_at,
-                            updated_at: hit.result.updated_at,
-                            deleted_at: hit.result.deleted_at,
+                            created: hit.result.created,
+                            updated: hit.result.updated,
+                            deleted: hit.result.deleted,
                         })
                         .collect();
 

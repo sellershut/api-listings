@@ -26,12 +26,12 @@ impl Default for Listing {
             other_images: vec![],
             published: true,
             location_id: Uuid::now_v7(),
-            created_at: OffsetDateTime::now_utc(),
-            deleted_at: None,
-            updated_at: OffsetDateTime::now_utc(),
+            created: OffsetDateTime::now_utc(),
+            deleted: None,
+            updated: OffsetDateTime::now_utc(),
             condition_id: Uuid::now_v7(),
             negotiable: true,
-            expires_at: None,
+            expires: None,
         }
     }
 }

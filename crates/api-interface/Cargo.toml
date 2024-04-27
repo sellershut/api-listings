@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 api-core = { workspace = true, features = ["async-graphql"] }
 api-database.workspace = true
-async-graphql = { workspace = true, features = ["uuid"] }
+async-graphql = { workspace = true, features = ["decimal", "uuid"] }
 async-stream.workspace = true
 async-trait.workspace = true
 base64 = "0.22.0"
@@ -17,6 +17,7 @@ futures-timer.workspace = true
 futures-util.workspace = true
 once_cell = "1.19.0"
 opentelemetry.workspace = true
+rust_decimal.workspace = true
 slab = "0.4.9"
 thiserror.workspace = true
 tracing.workspace = true

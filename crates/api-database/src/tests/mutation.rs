@@ -34,12 +34,12 @@ fn create_listing_item() -> Listing {
         other_images: vec![],
         published: true,
         location_id: Uuid::now_v7(),
-        created_at: OffsetDateTime::now_utc(),
-        deleted_at: None,
-        updated_at: OffsetDateTime::now_utc(),
+        created: OffsetDateTime::now_utc(),
+        deleted: None,
+        updated: OffsetDateTime::now_utc(),
         condition_id: Uuid::now_v7(),
         negotiable: true,
-        expires_at: None,
+        expires: None,
     }
 }
 
@@ -47,7 +47,7 @@ fn check_similarities(source: &Listing, dest: &Listing) {
     assert_eq!(source.title, dest.title);
     assert_eq!(source.description, dest.description);
     assert_eq!(source.price, dest.price);
-    assert_eq!(source.created_at, dest.created_at);
+    assert_eq!(source.created, dest.created);
 }
 
 #[tokio::test]

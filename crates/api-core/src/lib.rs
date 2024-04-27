@@ -3,6 +3,7 @@ pub mod api;
 #[cfg(feature = "async-graphql")]
 use async_graphql::*;
 
+use rust_decimal::Decimal;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
@@ -17,24 +18,21 @@ pub struct Listing {
     pub id: Uuid,
     pub title: String,
     pub description: String,
-    pub price: f32,
-    pub category_id: Uuid,
+    pub price: Decimal,
     pub image_url: String,
-    pub condition_id: Uuid,
     #[cfg_attr(feature = "async-graphql", graphql(default))]
     pub other_images: Vec<String>,
     pub published: bool,
     #[cfg_attr(feature = "async-graphql", graphql(default))]
     pub negotiable: bool,
-    pub location_id: Uuid,
     #[cfg_attr(
         feature = "async-graphql",
         graphql(default_with = "default_date_time()")
     )]
-    pub created_at: OffsetDateTime,
-    pub expires_at: Option<OffsetDateTime>,
-    pub updated_at: OffsetDateTime,
-    pub deleted_at: Option<OffsetDateTime>,
+    pub created: OffsetDateTime,
+    pub expires: Option<OffsetDateTime>,
+    pub updated: OffsetDateTime,
+    pub deleted: Option<OffsetDateTime>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd)]

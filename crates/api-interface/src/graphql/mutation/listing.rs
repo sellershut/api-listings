@@ -3,13 +3,20 @@ use api_core::{
     Listing,
 };
 use api_database::Client;
-use async_graphql::{Context, Object};
+use async_graphql::{Context, InputObject, Object};
 use tracing::instrument;
 
 use crate::graphql::subscription::{broker::SimpleBroker, ListingChanged};
 
 #[derive(Default, Debug)]
 pub struct ListingMutation;
+
+#[derive(InputObject, Debug)]
+pub struct MetaData {
+    pub category_id: Uuid,
+    pub condition_id: Uuid,
+    pub user_id: Uuid,
+}
 
 #[Object]
 impl ListingMutation {
@@ -18,11 +25,21 @@ impl ListingMutation {
         &self,
         ctx: &Context<'_>,
         input: Listing,
-        user_id: Uuid,
+        metadata: MetaData,
+        #[graphql(default = 1)] quantity: usize,
     ) -> async_graphql::Result<Listing> {
         let database = ctx.data::<Client>()?;
 
-        match database.create_listing(&input, &user_id).await {
+        match database
+            .create_listing(
+                &input,
+                &metadata.user_id,
+                &metadata.category_id,
+                &metadata.condition_id,
+                quantity,
+            )
+            .await
+        {
             Ok(listing) => {
                 SimpleBroker::publish(ListingChanged {
                     mutation_type: super::MutationType::Created,
@@ -41,11 +58,22 @@ impl ListingMutation {
         ctx: &Context<'_>,
         id: Uuid,
         input: Listing,
-        user_id: Uuid,
+        metadata: MetaData,
+        #[graphql(default = 1)] quantity: usize,
     ) -> async_graphql::Result<Option<Listing>> {
         let database = ctx.data::<Client>()?;
 
-        match database.update_listing(&id, &input, &user_id).await {
+        match database
+            .update_listing(
+                &id,
+                &input,
+                &metadata.user_id,
+                &metadata.category_id,
+                &metadata.condition_id,
+                quantity,
+            )
+            .await
+        {
             Ok(listing) => {
                 SimpleBroker::publish(ListingChanged {
                     mutation_type: super::MutationType::Updated,

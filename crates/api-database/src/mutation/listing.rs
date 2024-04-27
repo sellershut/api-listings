@@ -10,7 +10,7 @@ use api_core::{
     Listing,
 };
 use futures_util::TryFutureExt;
-use surrealdb::opt::RecordId;
+use rust_decimal::Decimal;
 use time::OffsetDateTime;
 use tracing::{debug, error, instrument, trace};
 
@@ -78,8 +78,11 @@ impl MutateListings for Client {
         &self,
         listing: &Listing,
         user_id: &Uuid,
+        category_id: &Uuid,
+        condition_id: &Uuid,
+        quantity: usize,
     ) -> Result<Listing, CoreError> {
-        check_listing_validity(self, &listing.category_id, user_id).await?;
+        check_listing_validity(self, category_id, user_id).await?;
 
         let input = InputListing::from(listing);
         trace!("creating listing");
@@ -95,21 +98,31 @@ impl MutateListings for Client {
                 image_url: type::string($img_url),
                 price: type::decimal($price),
                 other_images: [],
-                category_id: type::thing($category_tbl, $category_id),
                 active: type::bool($active),
                 negotiable: type::bool($negotiable),
                 location_id: type::thing($region_tbl, rand::uuid::v7()),
-                condition_id: type::thing($condition_tbl, $condition_id),
                 created_at: time::now(),
                 updated_at: time::now(),
                 expires_at: time::now()
-            }).id;
+            });
+            LET $condition_id = type::thing($condition_tbl, $condition_id);
+            LET $category_id = type::thing($category_tbl, $category_id);
+            LET $listing_id = $listing.id;
             LET $user_node = type::thing($user_tbl, $user_id);
-            RELATE $user_node->sells->$listing CONTENT {
+            RELATE $user_node->sells->$listing_id CONTENT {
                  in: $user_node,
                  quantity: type::int($quantity),
-                 out: $listing
+                 out: $listing_id
             };
+            RELATE $listing_id->inCategory->$category_id CONTENT {
+                 in: $listing_id,
+                 out: $category_id
+            };
+            RELATE $listing_id->withCondition->$condition_id CONTENT {
+                 in: $listing_id,
+                 out: $condition_id
+            };
+            RETURN $listing;
             COMMIT TRANSACTION;",
             )
             .bind(("title", input.title))
@@ -117,21 +130,20 @@ impl MutateListings for Client {
             .bind(("img_url", input.image_url))
             .bind(("price", input.price))
             .bind(("category_tbl", Collection::Category))
-            .bind(("category_id", listing.category_id.to_string()))
+            .bind(("category_id", category_id.to_string()))
             // .bind(("other_img", input.title))
             .bind(("active", input.active))
             .bind(("negotiable", input.negotiable))
-            .bind(("condition_id", listing.condition_id.to_string()))
+            .bind(("condition_id", condition_id.to_string()))
             .bind(("condition_tbl", Collection::ListingCondition))
             // .bind(("expires", input.title))
             .bind(("user_id", user_id.to_string()))
             .bind(("region_tbl", "region"))
-            .bind(("quantity", 10))
+            .bind(("quantity", quantity))
             .bind(("user_tbl", Collection::User))
             .await
-            .unwrap();
+            .map_err(map_db_error)?;
 
-        println!("{item:#?}");
         let resp: Option<DatabaseEntityListing> = item.take(0).map_err(map_db_error)?;
 
         match resp {
@@ -154,8 +166,11 @@ impl MutateListings for Client {
         id: &Uuid,
         data: &Listing,
         user_id: &Uuid,
+        category_id: &Uuid,
+        condition_id: &Uuid,
+        quantity: usize,
     ) -> Result<Option<Listing>, CoreError> {
-        check_listing_validity(self, &data.category_id, user_id).await?;
+        check_listing_validity(self, category_id, user_id).await?;
 
         let input = InputListing::from(data);
 
@@ -235,14 +250,11 @@ impl MutateListings for Client {
 struct InputListing<'a> {
     title: &'a str,
     description: &'a str,
-    price: f32,
-    category_id: RecordId,
+    price: &'a Decimal,
     image_url: &'a str,
     other_images: &'a [String],
     active: bool,
     negotiable: bool,
-    location_id: RecordId,
-    condition_id: RecordId,
     created_at: &'a OffsetDateTime,
     updated_at: &'a OffsetDateTime,
     expires_at: Option<&'a OffsetDateTime>,
@@ -251,23 +263,18 @@ struct InputListing<'a> {
 
 impl<'a> From<&'a Listing> for InputListing<'a> {
     fn from(value: &'a Listing) -> Self {
-        let record =
-            |collection: &str, uuid: &Uuid| RecordId::from((collection, uuid.to_string().as_str()));
         Self {
             title: &value.title,
             image_url: &value.image_url,
             description: &value.description,
-            price: value.price,
-            category_id: record("category", &value.category_id),
+            price: &value.price,
             other_images: &value.other_images,
             active: value.published,
             negotiable: value.negotiable,
-            condition_id: record("listing_condition", &value.condition_id),
-            location_id: record("region", &value.location_id),
-            created_at: &value.created_at,
-            deleted_at: value.deleted_at.as_ref(),
-            updated_at: &value.updated_at,
-            expires_at: value.expires_at.as_ref(),
+            created_at: &value.created,
+            deleted_at: value.deleted.as_ref(),
+            updated_at: &value.updated,
+            expires_at: value.expires.as_ref(),
         }
     }
 }

@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 async-graphql = { workspace = true, optional = true }
 async-trait.workspace = true
+rust_decimal.workspace = true
 serde = { workspace = true, optional = true }
 thiserror.workspace = true
 time.workspace = true
@@ -16,8 +17,8 @@ uuid = { workspace = true, features = ["serde"] }
 
 [features]
 default = []
-async-graphql = ["dep:async-graphql", "async-graphql/uuid", "async-graphql/time"]
-serde = ["serde/derive", "time/serde"]
+async-graphql = ["dep:async-graphql", "async-graphql/uuid", "async-graphql/time", "async-graphql/decimal"]
+serde = ["serde/derive", "time/serde", "rust_decimal/serde"]
 
 [dev-dependencies]
 bincode = "1.3.3"

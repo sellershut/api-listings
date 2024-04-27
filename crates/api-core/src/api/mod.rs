@@ -24,8 +24,8 @@ pub trait LocalQueryListings {
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError>;
     async fn get_listings_in_price_range(
         &self,
-        min: f32,
-        max: f32,
+        min: f64,
+        max: f64,
     ) -> Result<impl ExactSizeIterator<Item = Listing>, CoreError>;
     async fn search(
         &self,
@@ -42,13 +42,22 @@ pub trait LocalQueryListingCondition {
 
 #[trait_variant::make(MutateListings: Send)]
 pub trait LocalMutateListings {
-    async fn create_listing(&self, listing: &Listing, user_id: &Uuid)
-        -> Result<Listing, CoreError>;
+    async fn create_listing(
+        &self,
+        listing: &Listing,
+        user_id: &Uuid,
+        category_id: &Uuid,
+        condition_id: &Uuid,
+        quantity: usize,
+    ) -> Result<Listing, CoreError>;
     async fn update_listing(
         &self,
         id: &Uuid,
         data: &Listing,
         user_id: &Uuid,
+        category_id: &Uuid,
+        condition_id: &Uuid,
+        quantity: usize,
     ) -> Result<Option<Listing>, CoreError>;
     async fn delete_listing(&self, id: &Uuid, user_id: &Uuid)
         -> Result<Option<Listing>, CoreError>;
