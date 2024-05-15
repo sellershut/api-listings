@@ -19,7 +19,7 @@ futures-channel = "0.3.30"
 futures-timer = "3.0.3"
 futures-util = "0.3.30"
 meilisearch-sdk = { version = "0.24.3", default-features = false }
-opentelemetry = "0.22.0"
+opentelemetry = "0.23.0"
 opentelemetry-http = "0.11.1"
 rust_decimal = "1.35.0"
 serde = "1.0.200"
